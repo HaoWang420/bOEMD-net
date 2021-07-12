@@ -1,0 +1,6 @@
+{
+    "drop_p": {"_type":"uniform", "_value":[0.1, 0.9]},
+    "lr": {"_type":"choice", "_value":[0.1, 0.01, 0.001, 0.0001]},
+    "epochs": {"_type": "choice", "_value":[100]},
+    "batch_size": {"_type": "choice", "_value":[4, 8, 16]}
+}

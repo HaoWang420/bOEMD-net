@@ -1,0 +1,13 @@
+*.swp
+run_laplace_results/*
+run/*
+*.pth.tar
+*.pyc
+*.png
+.vscode/*
+qubiq/*
+
+weight_distribution*
+
+__pycache__
+.ipynb_checkpoints
