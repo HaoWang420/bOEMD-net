@@ -71,7 +71,7 @@ class Bayeisan_Trainer(object):
         self.model, self.optimizer = model, optimizer
 
         # Define Evaluator
-        self.evaluator = Evaluator(self.nclass, dice=True, loss=args.loss_type)
+        self.evaluator = Evaluator(self.nclass, dice=True, loss=args.loss_type, metrics=args.metrics)
 
         # Define lr scheduler
         self.scheduler = LR_Scheduler(args.lr_scheduler, args.lr,
@@ -161,12 +161,11 @@ class Bayeisan_Trainer(object):
         tbar = tqdm(loader, desc='\r')
         test_loss = 0.0
         kl_loss = 0.0
-        ged = 0.0
-        qubiq_score = 0.0
-        ged_list = []
+
         for i, sample in enumerate(tbar):
             if self.args.dataset == 'lidc-rand':
                 image, target = sample['image'], sample['labels']
+
                 # multiple forward pass sampling
                 image = torch.cat([image for i in range(target.shape[1])], dim=0)
             else:
@@ -186,32 +185,27 @@ class Bayeisan_Trainer(object):
             test_loss += loss.item()
             kl_loss += kl.item()
             tbar.set_description('Test loss: %.3f' % (test_loss / (i + 1)))
-            # tbar.set_description("Test KL Loss: %.4f" % (kl_loss / (i + 1)))
             
             pred = output.data.cpu().numpy()
             target = target.data.cpu().numpy()
 
             # Add batch sample into evaluator
             self.evaluator.add_batch(target, np.mean(pred, axis=0, keepdims=True))
-            pred = metrics.sigmoid(pred)
-
-            ged_list.append(metrics.generalised_energy_distance(pred[0] > 0.9, target[0]))
 
         qubiq_score = self.evaluator.QUBIQ_score()
-        # ncc_score = np.mean(ncc_list)
-        ged = np.mean(ged_list)
+        ged = self.evaluator.GED()
+        sd = self.evaluator.SD()
 
         self.writer.add_scalar('QUBIQ score', qubiq_score, epoch)
-        # self.writer.add_scalar("NCC score", ncc_score, epoch)
         self.writer.add_scalar("GED score", ged, epoch)
+        self.writer.add_scalar("Sample diversity", sd, epoch)
 
         print('Validation:')
         print('[Epoch: %d, numImages: %5d]' % (epoch, i * self.args.batch_size + image.data.shape[0]))
-        # print("dice: {}".format(dice))
-        # print("Shape of dice_class: {}".format(dice_class.shape))
+
         print("QUBIQ score {}".format(qubiq_score))
-        # print("NCC score {}".format(ncc_score))
         print("GED score {}".format(ged))
+        print("Sample diversity {}".format(sd))
         print('Loss: %.3f' % (test_loss))
 
         is_best = True
@@ -228,9 +222,6 @@ class Bayeisan_Trainer(object):
         self.evaluator.reset()
         tbar = tqdm(self.val_loader, desc='\r')
         test_loss = 0.0
-        num_iter = len(self.val_loader)
-        ncc_list = []
-        ged_list = []
         for i, sample in enumerate(tbar):
             if self.args.dataset == 'lidc-rand':
                 image, target = sample['image'], sample['labels']
@@ -263,29 +254,24 @@ class Bayeisan_Trainer(object):
             target = target.data.cpu().numpy()
         
             self.evaluator.add_batch(target, pred)
-            pred = metrics.sigmoid(pred)
-
-            ncc_list.append(metrics.variance_ncc_dist(pred[0] > 0.9, target[0]))
-            ged_list.append(metrics.generalised_energy_distance(pred[0] > 0.9, target[0]))
 
             tbar.set_description('Sample Dice loss: %.3f' % (test_loss / (i + 1)))
             tbar.set_description("Sample KL Loss: %.4f" % (mean_kl_loss / (i + 1)))
 
         qubiq_score = self.evaluator.QUBIQ_score()
-        ncc_score = np.mean(ncc_list)
-        ged = np.mean(ged_list)
+        ged = self.evaluator.GED()
+        sd = self.evaluator.SD()
 
         self.writer.add_scalar('Sampling QUBIQ score', qubiq_score, epoch)
-        self.writer.add_scalar("Sampling NCC score", ncc_score, epoch)
         self.writer.add_scalar("Sampling GED score", ged, epoch)
+        self.writer.add_scalar("Sampling sample diversity", sd, epoch)
 
         print('Sampling:')
         print('[Epoch: %d, numImages: %5d]' % (epoch, i * self.args.batch_size + image.data.shape[0]))
-        # print("dice: {}".format(dice))
-        # print("Shape of dice_class: {}".format(dice_class.shape))
+
         print("Sampling QUBIQ score {}".format(qubiq_score))
-        print("Sampling NCC score {}".format(ncc_score))
         print("Sampling GED score {}".format(ged))
+        print("Sampling Sample diversity {}".format(sd))
         print('Sampling Loss: %.3f' % (test_loss))
 
     def get_weight_SNR(self):
@@ -445,6 +431,8 @@ def main():
     parser.add_argument('--num-sample', type=int, default=10, help="Sampling number")
     parser.add_argument("--beta-type", action='store_const', default= 'standard', const='standard',
                         help="the beta type default valu")
+    
+    parser.add_argument('--metrics', nargs='+', default=['qubiq', 'ged'])
 
     args = parser.parse_args()
     args.cuda = not args.no_cuda and torch.cuda.is_available()
@@ -464,7 +452,7 @@ def main():
     print('Total Epoches:', trainer.args.epochs)
     temp_epoch = 0
     for epoch in range(trainer.args.start_epoch, trainer.args.epochs):
-        trainer.training(epoch)
+        # trainer.training(epoch)
         
         if not trainer.args.no_val and epoch % args.eval_interval == (args.eval_interval - 1):
             trainer.val(epoch, trainer.val_loader)

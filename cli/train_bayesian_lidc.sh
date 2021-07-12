@@ -12,4 +12,6 @@ python train_bayesian.py \
        --nchannels 1 \
        --model batten-unet \
        --nclass 1 \
+       --resume /home/wanghao/workspaces/bAttenUnet_test/run/lidc/battn_unet/experiment_0/checkpoint.pth.tar \
+       --metrics qubiq ged sd \
        --task-num 0

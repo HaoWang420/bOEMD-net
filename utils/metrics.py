@@ -64,16 +64,17 @@ def dice_coef(preds, targets, nclass):
     return torch.mean(loss)
 
 class Evaluator(object):
-    def __init__(self, num_class, dice=False, model='unet', loss='dice'):
-        self.num_class = num_class
-        self.confusion_matrix = np.zeros((self.num_class,)*2)
+    def __init__(self, num_class, dice=False, model='unet', loss='dice', metrics=['qubiq', 'dice', 'ged', 'sd']):
         self.model = model
-        self.mdice = []
         self.dice=dice
+        self.loss = loss
+        self.metrics = metrics
+
+        self.mdice = []
         self.dice_class = []
         self.qubiq = []
-        self.hausdorff = []
-        self.loss = loss
+        self.sd = []
+        self.ged = []
         
     def __sigmoid(self, x):
         return 1 / (1 + np.exp(-x))
@@ -182,7 +183,6 @@ class Evaluator(object):
     def _dice_coef(self, gt_image, pre_image, eps=1.0):
         n, c, w, h = pre_image.shape
         gt_image = gt_image.reshape([n, -1, w, h])
-        pre_image = self.__sigmoid(pre_image)
         dice_class = np.zeros(c, dtype=np.float)
         for ii in range(c):
             gt = gt_image[:, ii]
@@ -220,26 +220,31 @@ class Evaluator(object):
 
 
     def add_batch(self, gt_image, pre_image):
-        if self.dice:
-            # res = self._dice_coef(gt_image.copy(), pre_image.copy())
-            # self.mdice.append(res[0])
-            
-            # # get dice score per class
-            # self.dice_class.append(res[1])
+        pre_image_sig = self.__sigmoid(pre_image)
 
-            # get QUBIQ uncertainty estimate
+        # get QUBIQ uncertainty estimate
+        if 'qubiq' in self.metrics:
             self.qubiq.append(self.QUBIQ(gt_image, pre_image))
-            # self.hausdorff.append(self.getHausdorff(gt_image, pre_image))
-        else:
-            self.confusion_matrix += self._generate_matrix(gt_image, pre_image)
-
+        if 'dice' in self.metrics:
+            mdice, dice_class = self._dice_coef(gt_image, pre_image_sig)
+            self.mdice.append(mdice)
+            self.dice_class.append(dice_class)
+        if 'ged' in self.metrics:
+            n = pre_image.shape[0]
+            for ii in range(n):
+                self.ged.append(generalised_energy_distance(pre_image_sig[ii] > 0.9, gt_image[ii]))
+        if 'sd' in self.metrics:
+            # sample diversity
+            n = pre_image.shape[0]
+            for ii in range(n):
+                self.sd.append(self.sample_diversity(pre_image_sig[ii] > 0.9, gt_image[ii]))
 
     def reset(self):
-        self.confusion_matrix = np.zeros((self.num_class,) * 2)
         self.mdice.clear()
         self.dice_class.clear()
         self.qubiq.clear()
-        self.hausdorff.clear()
+        self.ged.clear()
+        self.sd.clear()
 
     def Dice_score(self):
         result = np.mean(self.mdice)
@@ -250,16 +255,32 @@ class Evaluator(object):
         result = np.mean(np.array(self.dice_class), axis=0)
         
         return result
-    
+
     def QUBIQ_score(self):
         print("class score: {}".format(np.mean(self.qubiq, axis=0)))
         # print(self.qubiq[0].shape)
         return np.mean(np.mean(self.qubiq, axis=1))
-    
+
     def Hausdorff_score(self):
         return np.mean(self.hausdorff)
-    
-    
+
+    def GED(self):
+        return np.mean(self.ged)
+
+    def SD(self):
+        return np.mean(self.sd)
+
+    @staticmethod
+    def sample_diversity(sample_arr, gt_arr=None):
+
+        N = sample_arr.shape[0]
+        sd = []
+        for ii in range(N):
+            for jj in range(N):
+                sd.append(dist_fct(sample_arr[ii, ...], sample_arr[jj, ...]))
+
+        return np.mean(sd)
+
 def variance_ncc_dist(sample_arr, gt_arr):
     def pixel_wise_xent(m_samp, m_gt, eps=1e-8):
 
@@ -306,9 +327,32 @@ def variance_ncc_dist(sample_arr, gt_arr):
 
     return (1/M)*sum(ncc_list)
 
+
+def dist_fct(m1, m2, nlabels=1):
+    """energy distance for ged & sample diversity
+    """
+
+    per_label_iou = []
+    for lbl in [1]:
+        # assert not lbl == 0  # tmp check
+        m1_bin = (m1 == lbl)*1
+        m2_bin = (m2 == lbl)*1
+
+        if np.sum(m1_bin) == 0 and np.sum(m2_bin) == 0:
+            per_label_iou.append(1)
+        elif np.sum(m1_bin) > 0 and np.sum(m2_bin) == 0 or np.sum(m1_bin) == 0 and np.sum(m2_bin) > 0:
+            per_label_iou.append(0)
+        else:
+            per_label_iou.append(jc(m1_bin, m2_bin))
+
+    # print(1-(sum(per_label_iou) / nlabels))
+
+    return 1-(sum(per_label_iou) / nlabels)
+
+
 def generalised_energy_distance(sample_arr, gt_arr, nlabels=1, **kwargs):
 
-    def dist_fct(m1, m2):
+    def dist_fct(m1, m2, nlabels=1):
 
         label_range = kwargs.get('label_range', range(nlabels))
 
