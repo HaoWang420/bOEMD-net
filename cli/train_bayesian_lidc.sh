@@ -1,7 +1,7 @@
 python train_bayesian.py \
        --workers 4 \
        --lr 0.01 \
-       --epochs 300 \
+       --epochs 400 \
        --gpu-ids 0 \
        --batch-size 32 \
        --test-batch-size 1 \
@@ -12,6 +12,6 @@ python train_bayesian.py \
        --nchannels 1 \
        --model batten-unet \
        --nclass 1 \
-       --resume /home/wanghao/workspaces/bAttenUnet_test/run/lidc/battn_unet/experiment_0/checkpoint.pth.tar \
+       --resume /home/wanghao/workspaces/bAttenUnet_test/run/lidc/battn_unet/experiment_4/checkpoint.pth.tar \
        --metrics qubiq ged sd \
        --task-num 0
