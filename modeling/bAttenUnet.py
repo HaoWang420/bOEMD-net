@@ -303,6 +303,53 @@ class DecoderUNet(ModuleWrapper):
 
         return torch.cat(out, dim=1)
 
+class MultiBUNet(nn.Module):
+    def __init__(self, n_channels, n_classes, bilinear=True, dropout=False, dropp=0.5):
+        super(MultiBUNet, self).__init__()
+
+        self.n_classes = n_classes
+        for ii in range(n_classes):
+            self.add_module('bunet' + str(ii), DecoderUNet(n_channels=n_channels, n_classes=1,
+                                                                 bilinear=bilinear, dropout=dropout, dropp=dropp, attention = None))
+
+    def forward(self, x):
+        # n, c, h, w = x.shape
+        out = []
+        for ii in range(self.n_classes):
+            out.append(self.__dict__['_modules']['bunet' + str(ii)](x))
+
+        return torch.cat(out, dim=1)
+
+class MultiBAUNet(nn.Module):
+    def __init__(self, n_channels, n_classes, bilinear=True, dropout=False, dropp=0.5):
+        super(MultiBUNet, self).__init__()
+
+        self.n_classes = n_classes
+        for ii in range(n_classes):
+            self.add_module('baunet' + str(ii), DecoderUNet(n_channels=n_channels, n_classes=1,
+                                                                 bilinear=bilinear, dropout=dropout, dropp=dropp))
+
+    def forward(self, x):
+        # n, c, h, w = x.shape
+        out = []
+        for ii in range(self.n_classes):
+            out.append(self.__dict__['_modules']['baunet' + str(ii)](x))
+
+        return torch.cat(out, dim=1)
+class MMultiBAUNet(ModuleWrapper):
+    def __init__(self, n_channels, n_classes, bilinear = True, dropout = False, dropp = 0.5):
+        super(MMultiBAUNet, self).__init__()
+        self.module_ = MultiBAUNet(n_channels=n_channels, n_classes=n_classes, bilinear=bilinear, dropout=dropout,
+                                  dropp=dropp)
+
+
+class MMultiBUNet(ModuleWrapper):
+    def __init__(self, n_channels, n_classes, bilinear=True, dropout=False, dropp=0.5):
+        super(MMultiBUNet, self).__init__()
+        self.module_ = MultiBUNet(n_channels=n_channels, n_classes=n_classes, bilinear=bilinear, dropout=dropout,
+                                  dropp=dropp)
+
+
 
 class MDecoderUNet(ModuleWrapper):
     def __init__(self, n_channels, n_classes, bilinear=True, dropout=False, dropp=0.5, attention='attn'):
@@ -310,4 +357,4 @@ class MDecoderUNet(ModuleWrapper):
         self.module_ = DecoderUNet(n_channels, n_classes, bilinear=bilinear, dropout=dropout, dropp=dropp,
                                    attention=attention)
         self.n_classes = n_classes
-
+        
