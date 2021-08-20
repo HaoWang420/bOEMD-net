@@ -158,13 +158,16 @@ class Trainer(object):
 
             # Add batch sample into evaluator
             self.evaluator.add_batch(target, pred)
-            ged_list.append(metrics.generalised_energy_distance(pred[0] > 0.9, target[0]))
 
         qubiq_score = self.evaluator.QUBIQ_score()
-        ged = np.mean(ged_list)
+        ged = self.evaluator.GED()
+        sd = self.evaluator.SD()
+        sa = self.evaluator.SA()
 
         self.writer.add_scalar('QUBIQ score', qubiq_score, epoch)
         self.writer.add_scalar("GED score", ged, epoch)
+        self.writer.add_scalar("sample diversity", sd, epoch)
+        self.writer.add_scalar("sample accuracy", sa, epoch)
         # if self.args.dataset == 'uncertain-brain-tumor':
         #     for ii in range(7):
         #         self.write.add_scalar('thres='+str(ii)+'7', dice_class[ii], epoch)
@@ -175,6 +178,8 @@ class Trainer(object):
         # print("Shape of dice_class: {}".format(dice_class.shape))
         print("QUBIQ score {}".format(qubiq_score))
         print("GED score {}".format(ged))
+        print("sample diversity {}".format(sd))
+        print("sample accuracy {}".format(sa))
         print('Loss: %.3f' % (test_loss))
 
         is_best = True
@@ -191,7 +196,7 @@ def main():
     parser = argparse.ArgumentParser(description="PyTorch UNet Training")
     parser.add_argument('--dataset', type=str, default='uncertain-brats',
                         choices=['brats', 'uncertain-brats', 'uncertain-brain-growth', 'uncertain-kidney',
-                                 'uncertain-prostate', 'lidc'],
+                                'uncertain-prostate', 'lidc'],
                         help='dataset name (default: pascal)')
     parser.add_argument('--workers', type=int, default=4,
                         metavar='N', help='dataloader threads')
@@ -251,7 +256,7 @@ def main():
     parser.add_argument('--model', type=str, default='decoder-unet',
                         help='specify the model, default by unet',
                         choices=['unet', 'prob-unet', 'multi-unet', 'decoder-unet', 'attn-unet', 'pattn-unet',
-                                 'pattn-unet-al'])
+                                'pattn-unet-al'])
     parser.add_argument('--pretrained', type=str, default=None,
                         help='specify the path to pretrained model parameters')
 

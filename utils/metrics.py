@@ -12,7 +12,6 @@ labels = {
 }
 
 
-
 def isotropic_gauss_loglike(x, mu, sigma, do_sum=True):
     cte_term = -(0.5) * torch.log(2 * torch.Tensor([3.14159265359]).to(x.device))
     det_sig_term = -torch.log(sigma)
@@ -26,6 +25,9 @@ def isotropic_gauss_loglike(x, mu, sigma, do_sum=True):
     return out
 
 def sigmoid(x):  
+    # prevent numerical overflow
+    x = np.clip(x, -88.72, 88.72)
+
     return 1/(1+np.exp(-x))
 
 def calculate_kl(mu_q, sig_q, mu_p, sig_p):
@@ -75,8 +77,12 @@ class Evaluator(object):
         self.qubiq = []
         self.sd = []
         self.ged = []
+        self.sa = []
         
     def __sigmoid(self, x):
+        # prevent numerical overflow
+        x = np.clip(x, -88.72, 88.72)
+
         return 1 / (1 + np.exp(-x))
 
     def Pixel_Accuracy(self):
@@ -238,6 +244,12 @@ class Evaluator(object):
             n = pre_image.shape[0]
             for ii in range(n):
                 self.sd.append(self.sample_diversity(pre_image_sig[ii] > 0.9, gt_image[ii]))
+        
+        if 'sa' in self.metrics:
+            # sample accuracy
+            n = pre_image.shape[0]
+            for ii in range(n):
+                self.sa.append(self.sample_accuracy(pre_image_sig[ii] > 0.9, gt_image[ii]))
 
     def reset(self):
         self.mdice.clear()
@@ -245,6 +257,7 @@ class Evaluator(object):
         self.qubiq.clear()
         self.ged.clear()
         self.sd.clear()
+        self.sa.clear()
 
     def Dice_score(self):
         result = np.mean(self.mdice)
@@ -269,6 +282,9 @@ class Evaluator(object):
 
     def SD(self):
         return np.mean(self.sd)
+    
+    def SA(self):
+        return np.mean(self.sa)
 
     @staticmethod
     def sample_diversity(sample_arr, gt_arr=None):
@@ -278,6 +294,17 @@ class Evaluator(object):
         for ii in range(N):
             for jj in range(N):
                 sd.append(dist_fct(sample_arr[ii, ...], sample_arr[jj, ...]))
+
+        return np.mean(sd)
+
+    @staticmethod
+    def sample_accuracy(sample_arr, gt_arr):
+        N = sample_arr.shape[0]
+        M = gt_arr.shape[0]
+        sd = []
+        for ii in range(N):
+            for jj in range(M):
+                sd.append(dist_fct(sample_arr[ii, ...], gt_arr[jj, ...]))
 
         return np.mean(sd)
 

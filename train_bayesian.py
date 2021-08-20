@@ -22,7 +22,6 @@ import seaborn as sns
 class Bayeisan_Trainer(object):
     # Define Saver
     def __init__(self, args):
-     
         self.args = args
         self.saver = Saver(args)
         self.saver.save_experiment_config()
@@ -195,10 +194,12 @@ class Bayeisan_Trainer(object):
         qubiq_score = self.evaluator.QUBIQ_score()
         ged = self.evaluator.GED()
         sd = self.evaluator.SD()
+        sa = self.evaluator.SA()
 
         self.writer.add_scalar('QUBIQ score', qubiq_score, epoch)
         self.writer.add_scalar("GED score", ged, epoch)
         self.writer.add_scalar("Sample diversity", sd, epoch)
+        self.writer.add_scalar("Sample accuracy", sa, epoch)
 
         print('Validation:')
         print('[Epoch: %d, numImages: %5d]' % (epoch, i * self.args.batch_size + image.data.shape[0]))
@@ -206,6 +207,7 @@ class Bayeisan_Trainer(object):
         print("QUBIQ score {}".format(qubiq_score))
         print("GED score {}".format(ged))
         print("Sample diversity {}".format(sd))
+        print("Sample accuracy {}".format(sa))
         print('Loss: %.3f' % (test_loss))
 
         is_best = True
@@ -356,7 +358,7 @@ def main():
     parser = argparse.ArgumentParser(description="PyTorch Bayesian UNet Training")
     parser.add_argument('--dataset', type=str, default='uncertain-prostate',
                         choices=['brats', 'uncertain-brats', 'uncertain-brain-growth', 'uncertain-kidney',
-                                 'uncertain-prostate', 'lidc', 'lidc-rand'],
+                                'uncertain-prostate', 'lidc', 'lidc-rand'],
                         help='dataset name (default: pascal)')
     parser.add_argument('--workers', type=int, default=2,
                         metavar='N', help='dataloader threads')
@@ -417,7 +419,7 @@ def main():
     parser.add_argument('--model', type=str, default='batten-unet',
                         help='specify the model, default by unet',
                         choices=['unet', 'prob-unet', 'multi-unet', 'decoder-unet', 'attn-unet', 'pattn-unet',
-                                 'pattn-unet-al', 'batten-unet', 'battn-unet-one'])
+                                'pattn-unet-al', 'batten-unet', 'battn-unet-one'])
     parser.add_argument('--pretrained', type=str, default=None,
                         help='specify the path to pretrained model parameters')
 
