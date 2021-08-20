@@ -1,7 +1,7 @@
 import os
 import torch
 from modeling.unet import *
-from modeling.bAttenUnet import MDecoderUNet
+from modeling.bAttenUnet import MDecoderUNet, MMultiBAUNet, MMultiBUNet
 
 
 def build_model(args, nchannels, nclass, model='unet'):
@@ -38,6 +38,22 @@ def build_model(args, nchannels, nclass, model='unet'):
         )
     elif model == 'decoder-unet':
         return DecoderUNet(
+            n_channels=nchannels,
+            n_classes=nclass,
+            bilinear=True,
+            dropout=args.dropout,
+            dropp=args.drop_p
+        )
+    elif model == "multi-bunet":
+        return MMultiBUNet(
+            n_channels=nchannels,
+            n_classes=nclass,
+            bilinear=True,
+            dropout=args.dropout,
+            dropp=args.drop_p
+        )
+    elif model == "multi-atten-bunet":
+        return MMultiBAUNet(
             n_channels=nchannels,
             n_classes=nclass,
             bilinear=True,
