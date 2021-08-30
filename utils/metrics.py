@@ -66,7 +66,7 @@ def dice_coef(preds, targets, nclass):
     return torch.mean(loss)
 
 class Evaluator(object):
-    def __init__(self, num_class, dice=False, model='unet', loss='dice', metrics=['qubiq', 'dice', 'ged', 'sd']):
+    def __init__(self, num_class, dice=False, model='unet', loss='dice', metrics=['qubiq', 'dice', 'ged', 'sd', 'sa']):
         self.model = model
         self.dice=dice
         self.loss = loss

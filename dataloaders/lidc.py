@@ -45,7 +45,7 @@ class LIDC_IDRI(Dataset):
     MEAN = 0.22223
     STD = 0.1843
 
-    def __init__(self, dataset_location=Path.getPath('brats'), transform=None, mode='ged'):
+    def __init__(self, dataset_location=Path.getPath('lidc'), transform=None, mode='ged'):
         """
         mode = choices(['ged', 'qubiq'])
         """

@@ -79,8 +79,7 @@ def make_data_loader(args, **kwargs):
     
     if args.dataset == 'lidc':
         nclass = 4
-        location = '/home/wanghao/datasets/'
-        dataset = LIDC_IDRI(dataset_location=location, transform=None, mode='qubiq')
+        dataset = LIDC_IDRI(transform=None, mode='qubiq')
 
         dataset_size = len(dataset)
         indices = list(range(dataset_size))

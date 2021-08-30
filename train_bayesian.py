@@ -372,6 +372,8 @@ class Bayeisan_Trainer(object):
 
 def main():
     parser = argparse.ArgumentParser(description="PyTorch Bayesian UNet Training")
+    parser.add_argument('--save-path', type=str, default='run')
+
     parser.add_argument('--dataset', type=str, default='uncertain-brats',
                         choices=['brats', 'uncertain-brats', 'uncertain-brain-growth', 'uncertain-kidney',
                                 'uncertain-prostate', 'lidc', 'lidc-rand'],
@@ -473,7 +475,7 @@ def main():
         trainer.training(epoch)
         
         if not trainer.args.no_val and epoch % args.eval_interval == (args.eval_interval - 1):
-                trainer.val_sample(epoch)
+            trainer.val(epoch)
 
     trainer.writer.close()
     # prefix = f"/home/qingqiao/bAttenUnet_test/weight_distribution/{args.dataset}/{str(args.task_num + 1)}/{args.model}"

@@ -194,6 +194,8 @@ class Trainer(object):
 
 def main():
     parser = argparse.ArgumentParser(description="PyTorch UNet Training")
+
+    parser.add_argument('--save-path', type=str, default='run')
     parser.add_argument('--dataset', type=str, default='uncertain-brats',
                         choices=['brats', 'uncertain-brats', 'uncertain-brain-growth', 'uncertain-kidney',
                                 'uncertain-prostate', 'lidc'],
@@ -294,7 +296,11 @@ def main():
         args.lr = lrs[args.dataset.lower()] / (4 * len(args.gpu_ids)) * args.batch_size
 
     print(args)
+
+    # set random seed
     torch.manual_seed(args.seed)
+    np.random.seed(args.seed)
+
     trainer = Trainer(args)
     print('Starting Epoch:', trainer.args.start_epoch)
     print('Total Epoches:', trainer.args.epochs)

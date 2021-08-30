@@ -8,6 +8,6 @@ class Path(object):
         if dataset == 'brats':
             return '/home/cvip/data/wanghao/datasets/braTS_jpg'
         if dataset == 'lidc':
-            return '/home/wanghao/datasets/'
+            return '/data/ssd/wanghao/datasets/'
         else:
             raise NotImplementedError

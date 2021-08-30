@@ -5,11 +5,12 @@ python train.py \
        --gpu-ids 0 \
        --batch-size 32 \
        --test-batch-size 1 \
-       --checkname multi-unet-lidc \
+       --checkname unet-lidc \
        --eval-interval 5 \
        --dataset lidc \
        --loss-type dice \
        --nchannels 1 \
-       --model multi-unet \
+       --model unet \
        --nclass 4 \
-       --task-num 0
+       --task-num 0 \
+       --save-path /data/ssd/wanghao/bOEMD_run 

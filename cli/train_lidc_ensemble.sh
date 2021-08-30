@@ -1,16 +1,16 @@
-python train_bayesian.py \
+python train.py \
        --workers 4 \
-       --lr 0.01 \
-       --epochs 50 \
+       --lr 10 \
+       --epochs 200 \
        --gpu-ids 0 \
        --batch-size 32 \
        --test-batch-size 1 \
-       --checkname battn_unet \
+       --checkname multi-unet-lidc \
        --eval-interval 5 \
        --dataset lidc \
-       --loss-type ELBO \
+       --loss-type dice \
        --nchannels 1 \
-       --model batten-unet \
-       --nclass 1 \
+       --model multi-unet \
+       --nclass 4 \
        --task-num 0 \
        --save-path /data/ssd/wanghao/bOEMD_run 
