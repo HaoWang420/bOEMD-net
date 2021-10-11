@@ -1,7 +1,7 @@
 import os
 import torch
 from modeling.unet import *
-from modeling.bAttenUnet import MDecoderUNet, MMultiBAUNet, MMultiBUNet
+from modeling.bAttenUnet import MDecoderUNet, MMultiBAUNet, MMultiBUNet, ODecoderUNet, ODecoderUNetWrapper
 
 
 def build_model(args, nchannels, nclass, model='unet'):
@@ -87,13 +87,12 @@ def build_model(args, nchannels, nclass, model='unet'):
             dropp=args.drop_p,
             attention='prob-al',
         )
-    elif model == 'battn-unet-one':
-        return MDecoderUNet(
+    elif model == 'bOEOD-unet':
+        return ODecoderUNetWrapper(
             n_channels=nchannels,
-            # one head output
-            n_classes=1,
+            n_classes=nclass,
             bilinear=True,
-            attention="attn"
+            attention='attn'
         )
     else:
         raise NotImplementedError

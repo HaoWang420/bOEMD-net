@@ -285,6 +285,18 @@ class Evaluator(object):
     
     def SA(self):
         return np.mean(self.sa)
+    
+    def save(self, path):
+        qubiq = np.array(self.qubiq)
+        ged = np.array(self.ged)
+        sd = np.array(self.sd)
+        sa = np.array(self.sa)
+
+        np.save(os.path.join(path, 'qubiq.npy'), qubiq)
+        np.save(os.path.join(path, 'ged.npy'), ged)
+        np.save(os.path.join(path, 'sd.npy'), sd)
+        np.save(os.path.join(path, 'sa.npy'), sa)
+
 
     @staticmethod
     def sample_diversity(sample_arr, gt_arr=None):

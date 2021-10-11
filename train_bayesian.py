@@ -186,9 +186,6 @@ class Bayeisan_Trainer(object):
 
             # Add batch sample into evaluator
             self.evaluator.add_batch(target, pred)
-            pred = metrics.sigmoid(pred)
-            ncc_list.append(metrics.variance_ncc_dist(pred[0] > 0.9, target[0]))
-            ged_list.append(metrics.generalised_energy_distance(pred[0] > 0.9, target[0]))
 
         qubiq_score = self.evaluator.QUBIQ_score()
         ged = self.evaluator.GED()
@@ -227,70 +224,67 @@ class Bayeisan_Trainer(object):
         tbar = tqdm(self.val_loader, desc='\r')
         test_loss = 0.0
         num_iter = len(self.val_loader)
-        ncc_list = []
-        ged_list = []
+
         for i, sample in enumerate(tbar):
-            image, target = sample['image'], sample['label']
+            if self.args.dataset == 'lidc-syn-rand':
+                image, target = sample['image'], sample['labels']
+            else:
+                image, target = sample['image'], sample['label']
             n, c, w, h = target.shape
-            predictions = target.data.new(self.num_sample, n, c, w, h)
             if self.args.cuda:
                 image, target = image.cuda(), target.cuda()
             kl_losses = torch.zeros((self.num_sample, n))
-            # if self.args.cuda:
-            #     predictions, kl_losses = predictions.cuda(), kl_losses.cuda()
-            with torch.no_grad():
-                for j in range(self.num_sample):
-                    output, kl = self.model(image)
-                    # print(output.shape)
-                    if self.args.cuda:
 
-                        predictions[j] = output.cpu()
-                        kl_losses[j] = kl.cpu()
-                    else:
-                        predictions[j] = output
-                        kl_losses[j] = kl
-
-            mean_out = torch.mean(predictions, dim=0, keepdim=False)
-            mean_kl_loss = torch.mean(kl_losses)
-        
-        
-        
-            if self.args.cuda:
-                test_loss = metrics.dice_coef(mean_out, target.cpu(), self.nclass)
+            assert image.shape[0] == 1
+            if self.args.dataset == 'lidc-syn-rand':
+                image = image.repeat(self.num_sample * 3, 1, 1, 1)
             else:
-                test_loss = metrics.dice_coef(mean_out, target, self.nclass)
+                image = image.repeat(self.num_sample, 1, 1, 1)
 
-            self.writer.add_scalar("sampling/total_loss_iter", mean_kl_loss, i + num_iter * epoch)
+            with torch.no_grad():
 
-            
+                predictions, kl = self.model(image)
+
+            if self.args.dataset == 'lidc-syn-rand':
+                predictions = predictions.reshape((self.num_sample, 3, predictions.shape[2], predictions.shape[3]))
+
+            mean_out = torch.mean(predictions, dim=0, keepdim=True)
+            mean_kl_loss = torch.mean(kl_losses)
+
             pred = mean_out.data.cpu().numpy()
             target = target.data.cpu().numpy()
         
             self.evaluator.add_batch(target, pred)
-            pred = metrics.sigmoid(pred)
-#             print("pred shape", pred.shape)
-            ncc_list.append(metrics.variance_ncc_dist(pred[0] > 0.9, target[0]))
-            ged_list.append(metrics.generalised_energy_distance(pred[0] > 0.9, target[0]))
 
-            tbar.set_description('Sample Dice loss: %.3f' % (test_loss / (i + 1)))
-            tbar.set_description("Sample KL Loss: %.4f" % (mean_kl_loss / (i + 1)))
-
-        ncc_list = [value for value in ncc_list if value == value]
         qubiq_score = self.evaluator.QUBIQ_score()
-        ncc_score = np.mean(ncc_list)
-        ged = np.mean(ged_list)
+        ged = self.evaluator.GED()
+        sd = self.evaluator.SD()
+        sa = self.evaluator.SA()
 
-        self.writer.add_scalar('Sampling QUBIQ score', qubiq_score, epoch)
-        self.writer.add_scalar("Sampling NCC score", ncc_score, epoch)
-        self.writer.add_scalar("Sampling GED score", ged, epoch)
+        # save statistics to experiment dir
+        self.evaluator.save(self.saver.experiment_dir)
 
+        self.writer.add_scalar('val_sample/QUBIQ score', qubiq_score, epoch)
+        self.writer.add_scalar("val_sample/GED score", ged, epoch)
+        self.writer.add_scalar("val_sample/Sample diversity", sd, epoch)
+        self.writer.add_scalar("val_sample/Sample accuracy", sa, epoch)
         print('Sampling:')
         print('[Epoch: %d, numImages: %5d]' % (epoch, i * self.args.batch_size + image.data.shape[0]))
 
         print("Sampling QUBIQ score {}".format(qubiq_score))
-        print("Sampling NCC score {}".format(ncc_score))
         print("Sampling GED score {}".format(ged))
+        print("Sampling SD score {}".format(sd))
+        print("Sampling SA score {}".format(sa))
         print('Sampling Loss: %.3f' % (test_loss))
+
+        is_best = True
+        self.best_pred = qubiq_score
+        self.saver.save_checkpoint({
+            'epoch': epoch + 1,
+            'state_dict': self.model.module.state_dict(),
+            'optimizer': self.optimizer.state_dict(),
+            'best_pred': self.best_pred,
+        }, is_best)
 
     def get_weight_SNR(self):
         weight_SNR_vec = []
@@ -376,7 +370,7 @@ def main():
 
     parser.add_argument('--dataset', type=str, default='uncertain-brats',
                         choices=['brats', 'uncertain-brats', 'uncertain-brain-growth', 'uncertain-kidney',
-                                'uncertain-prostate', 'lidc', 'lidc-rand'],
+                                'uncertain-prostate', 'lidc', 'lidc-rand', 'lidc-syn', 'lidc-syn-rand'],
                         help='dataset name (default: pascal)')
     parser.add_argument('--workers', type=int, default=2,
                         metavar='N', help='dataloader threads')
@@ -437,7 +431,7 @@ def main():
     parser.add_argument('--model', type=str, default='multi-bunet',
                         help='specify the model, default by unet',
                         choices=['unet', 'prob-unet', 'multi-unet', 'decoder-unet', 'attn-unet', 'pattn-unet',
-                                 'pattn-unet-al', "batten-unet", "multi-bunet", "multi-atten-bunet"])
+                                 'pattn-unet-al', "batten-unet", "multi-bunet", "multi-atten-bunet", "bOEOD-unet"])
     parser.add_argument('--pretrained', type=str, default=None,
                         help='specify the path to pretrained model parameters')
 
@@ -448,9 +442,13 @@ def main():
     parser.add_argument('--drop-p', type=float, default=0.5, help='probability of applying dropout')
 
     parser.add_argument('--task-num', type=int, default=1, help='task No. for uncertain dataset')
-    parser.add_argument('--num-sample', type=int, default=50, help="Sampling number")
+    parser.add_argument('--num-sample', type=int, default=10, help="Sampling number")
     parser.add_argument("--beta-type", action='store_const', default= 'standard', const='standard',
                         help="the beta type default valu")
+
+    # lidc synthetic data shuffle
+    parser.add_argument('--shuffle', action='store_true', default=False, help='shuffle of lidc synthetic data')
+
 
     args = parser.parse_args()
     args.cuda = not args.no_cuda and torch.cuda.is_available()
@@ -472,11 +470,12 @@ def main():
     print('Total Epoches:', trainer.args.epochs)
     temp_epoch = 0
     for epoch in range(trainer.args.start_epoch, trainer.args.epochs):
-        trainer.training(epoch)
+        # trainer.training(epoch)
         
         if not trainer.args.no_val and epoch % args.eval_interval == (args.eval_interval - 1):
-            trainer.val(epoch)
+            trainer.val_sample(epoch)
 
+    trainer.val_sample(50)
     trainer.writer.close()
     # prefix = f"/home/qingqiao/bAttenUnet_test/weight_distribution/{args.dataset}/{str(args.task_num + 1)}/{args.model}"
     # # prefix = os.path.join(r"/home/qingqiao/bAttenUnet_test/", name)

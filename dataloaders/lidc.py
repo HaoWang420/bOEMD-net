@@ -3,6 +3,7 @@
 # Modifications: Marc Gantenbein
 # This software is licensed under the Apache License 2.0
 import torch
+from torch._C import dtype
 from torch.utils.data.dataset import Dataset
 from torch.utils.data import DataLoader
 import numpy as np
@@ -11,6 +12,8 @@ import random
 import pickle
 from torch.utils.data import DataLoader
 from torch.utils.data.sampler import SubsetRandomSampler
+
+from skimage.morphology import erosion, dilation, disk
 
 from mypath import Path
 
@@ -36,6 +39,47 @@ def load_data_into_loader(sys_config, name, batch_size, transform=None):
     print("Number of training/test/validation patches:", (len(train_indices), len(test_indices), len(val_indices)))
 
     return train_loader, test_loader, validation_loader
+
+
+class LIDC_SYN(Dataset):
+    SET = 0
+    def __init__(self, transform=None, shuffle=True, mode='') -> None:
+        super().__init__()
+
+        self.data = LIDC_IDRI(transform=transform, mode='qubiq')
+        self.selem = disk(1)
+        self.shuffle = shuffle
+        self.mode = mode
+
+        self.perm_mat = np.zeros((len(self.data), 3), dtype=np.int)
+        for ii in range(len(self.data)):
+            self.perm_mat[ii] = np.random.permutation(3)
+    
+    def __getitem__(self, index):
+        permutation = self.perm_mat[index]
+
+        out = self.data[index]
+
+        label = out['label'][self.SET]
+
+        dilated = dilation(label, self.selem)
+        eroded = erosion(label, self.selem)
+
+        syn_label = np.stack([label, dilated, eroded], axis=0)
+        if self.shuffle:
+            syn_label = syn_label[permutation]
+
+        if self.mode == 'rand':
+            out['label'] = syn_label[np.random.randint(3)][None, ...]
+            out['labels'] = syn_label
+        else:
+            out['label'] = syn_label
+
+        return out
+
+    def __len__(self, ):
+
+        return len(self.data)
 
 
 class LIDC_IDRI(Dataset):

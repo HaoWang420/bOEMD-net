@@ -49,6 +49,9 @@ class SegmentationLosses(object):
         """
         assert not target.requires_grad
         # maximum likelihood - kl
+        sigmoid = nn.Sigmoid()
+        bce = nn.BCELoss()
+
         return self.dice_coef(input, target) + beta * kl / train_size
 
 

@@ -357,4 +357,24 @@ class MDecoderUNet(ModuleWrapper):
         self.module_ = DecoderUNet(n_channels, n_classes, bilinear=bilinear, dropout=dropout, dropp=dropp,
                                    attention=attention)
         self.n_classes = n_classes
-        
+
+class ODecoderUNetWrapper(ModuleWrapper):
+    def __init__(self, n_channels, n_classes, bilinear=True, dropout=False, dropp=0.5, attention='attn'):
+        super().__init__()
+        self.module_ = ODecoderUNet(n_channels, n_classes, bilinear=bilinear, dropout=dropout, dropp=dropp,
+                                   attention=attention)
+        self.n_classes = n_classes
+
+
+class ODecoderUNet(nn.Module):
+    def __init__(self, n_channels, n_classes, bilinear=True, dropout=False, dropp=0.5, attention='attn'):
+        super().__init__()
+        self.n_classes = n_classes
+
+        self.encoder = Encoder(n_channels, bilinear)
+        self.decoder = Decoder(n_classes, bilinear)
+    
+    def forward(self, x):
+        x = self.encoder(x)
+
+        return self.decoder(x)

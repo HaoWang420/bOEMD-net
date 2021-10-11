@@ -1,6 +1,7 @@
+from torchvision import transforms
 from dataloaders.brats import UncertainBraTS
 from dataloaders.brats import BraTSSet
-from dataloaders.lidc import LIDC_IDRI
+from dataloaders.lidc import LIDC_IDRI, LIDC_SYN
 from torch.utils.data import DataLoader
 from torch.utils.data.sampler import SubsetRandomSampler
 
@@ -96,8 +97,51 @@ def make_data_loader(args, **kwargs):
         validation_loader = DataLoader(dataset, batch_size=args.test_batch_size, sampler=val_sampler)
         print("Number of training/test/validation patches:", (len(train_indices), len(test_indices), len(val_indices)))
 
+        return train_loader, test_loader, validation_loader, nclass, len(train_indices)
+
+    if args.dataset == 'lidc-syn':
+        nclass = 3
+        dataset = LIDC_SYN(transform=None, shuffle=args.shuffle)
+
+        dataset_size = len(dataset)
+        indices = list(range(dataset_size))
+        split = int(np.floor(0.1 * dataset_size))
+        np.random.shuffle(indices)
+
+        train_indices, test_indices, val_indices = indices[8*split:], indices[1*split:2*split], indices[:split]
+
+        train_sampler = SubsetRandomSampler(train_indices)
+        test_sampler = SubsetRandomSampler(test_indices)
+        val_sampler = SubsetRandomSampler(val_indices)
+        train_loader = DataLoader(dataset, batch_size=args.batch_size, sampler=train_sampler)
+        test_loader = DataLoader(dataset, batch_size=args.test_batch_size, sampler=test_sampler)
+        validation_loader = DataLoader(dataset, batch_size=args.test_batch_size, sampler=val_sampler)
+        print("Number of training/test/validation patches:", (len(train_indices), len(test_indices), len(val_indices)))
+
         return train_loader, validation_loader, test_loader, nclass, len(train_indices)
 
+    if args.dataset == 'lidc-syn-rand':
+        nclass = 1
+
+        dataset = LIDC_SYN(transform=None, mode='rand')
+
+        dataset_size = len(dataset)
+        indices = list(range(dataset_size))
+        split = int(np.floor(0.1 * dataset_size))
+        np.random.shuffle(indices)
+
+        train_indices, test_indices, val_indices = indices[8*split:], indices[1*split:2*split], indices[:split]
+
+        train_sampler = SubsetRandomSampler(train_indices)
+        test_sampler = SubsetRandomSampler(test_indices)
+        val_sampler = SubsetRandomSampler(val_indices)
+        train_loader = DataLoader(dataset, batch_size=args.batch_size, sampler=train_sampler)
+        test_loader = DataLoader(dataset, batch_size=args.test_batch_size, sampler=test_sampler)
+        validation_loader = DataLoader(dataset, batch_size=args.test_batch_size, sampler=val_sampler)
+        print("Number of training/test/validation patches:", (len(train_indices), len(test_indices), len(val_indices)))
+
+        return train_loader, validation_loader, test_loader, nclass, len(train_indices)
+        
     # randomly samples a label during trainning
     if args.dataset == 'lidc-rand':
         nclass = 1
