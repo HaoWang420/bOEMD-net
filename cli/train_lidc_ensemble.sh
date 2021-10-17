@@ -13,4 +13,4 @@ python train.py \
        --model multi-unet \
        --nclass 4 \
        --task-num 0 \
-       --save-path /data/ssd/wanghao/bOEMD_run 
+       --save-path /data/ssd/qingqiao/BOEMD_run_test/

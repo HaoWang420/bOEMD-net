@@ -2,18 +2,8 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-import torchbnn as bnn
 from modeling.components import *
 
-
-class conv2d(nn.Module):
-    def __init__(self, in_channels, out_channels, kernel_size, padding, prior_mu=0, prior_sigma=1):
-        super(conv2d, self).__init__()
-        self.conv = bnn.BayesConv2d(prior_mu=prior_mu, prior_sigma=prior_sigma,
-                        in_channels=in_channels, out_channels=out_channels,
-                        kernel_size=kernel_size, padding=padding)
-    def forward(self, x):
-        return self.conv(x)
 
 # building brick for unet
 class DoubleConv(nn.Module):
@@ -26,10 +16,10 @@ class DoubleConv(nn.Module):
         if not mid_channels:
             mid_channels = out_channels
         self.double_conv = nn.Sequential(
-            conv2d(in_channels, mid_channels, kernel_size=3, padding=1),
+            nn.Conv2d(in_channels, mid_channels, kernel_size=3, padding=1),
             nn.BatchNorm2d(mid_channels),
             nn.ReLU(inplace=True),
-            conv2d(mid_channels, out_channels, kernel_size=3, padding=1),
+            nn.Conv2d(mid_channels, out_channels, kernel_size=3, padding=1),
             nn.BatchNorm2d(out_channels),
             nn.ReLU(inplace=True)
         )
@@ -144,7 +134,7 @@ class Up(nn.Module):
 class OutConv(nn.Module):
     def __init__(self, in_channels, out_channels):
         super(OutConv, self).__init__()
-        self.conv = conv2d(in_channels, out_channels, kernel_size=1, padding= 0)
+        self.conv = nn.Conv2d(in_channels, out_channels, kernel_size=1, padding= 0)
 
     def forward(self, x):
         return self.conv(x)

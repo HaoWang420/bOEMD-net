@@ -101,7 +101,7 @@ class Trainer(object):
             if self.args.cuda:
                 image, target = image.cuda(), target.cuda()
 
-            self.scheduler(self.optimizer, i, epoch, self.best_pred)
+            # self.scheduler(self.optimizer, i, epoch, self.best_pred)
             self.optimizer.zero_grad()
 
             output = self.model(image)
