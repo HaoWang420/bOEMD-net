@@ -52,7 +52,9 @@ class BBBConv2d(ModuleWrapper):
         self.dilation = dilation
         self.groups = 1
         self.use_bias = bias
+        # self.device = torch.device('cpu')
         self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+
 
         if priors is None:
             priors = {

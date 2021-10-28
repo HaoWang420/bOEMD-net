@@ -155,6 +155,7 @@ class Trainer(object):
             tbar.set_description('Test loss: %.3f' % (test_loss / (i + 1)))
             pred = output.data.cpu().numpy()
             target = target.cpu().numpy()
+            # targets = targets.cpu().numpy()
 
             # Add batch sample into evaluator
             self.evaluator.add_batch(target, pred)
@@ -190,6 +191,70 @@ class Trainer(object):
             'optimizer': self.optimizer.state_dict(),
             'best_pred': self.best_pred,
         }, is_best)
+    
+    def test(self, path):
+        """
+        For QUBIQ dataset, there are no test labels.
+        This founction is only for lidc dataset.
+        :return:
+        """
+        checkpoint = torch.load(path, map_location=torch.device("cuda" if self.args.cuda else "cpu"))
+        print(checkpoint['state_dict'].keys())
+
+        if self.args.cuda:
+            self.model.module.load_state_dict(checkpoint["state_dict"], strict=True)
+        else:
+            self.model.load_state_dict(checkpoint['state_dict'], strict = True)
+        
+
+        self.model.eval()
+        self.evaluator.reset()
+        tbar = tqdm(self.test_loader, desc='\r')
+        test_loss = 0.0
+        ged_list = []
+
+        for i, sample in enumerate(tbar):
+            image, target = sample['image'], sample['label']
+            n, c, w, h = target.shape
+
+            if self.args.cuda:
+                image, target = image.cuda(), target.cuda()
+
+            with torch.no_grad():
+                output = self.model(image)
+                # print(output.shape)
+                if self.args.cuda:
+
+                    predictions = output.cpu()
+    
+            mean_out = predictions
+
+            if self.args.cuda:
+                test_loss = metrics.dice_coef(mean_out, target.cpu(), self.nclass)
+            else:
+                test_loss = metrics.dice_coef(mean_out, target, self.nclass)
+
+            pred = mean_out.data.cpu().numpy()
+            target = target.data.cpu().numpy()
+
+            self.evaluator.add_batch(target, pred)
+
+            tbar.set_description('Sample Dice loss: %.3f' % (test_loss / (i + 1)))
+
+        qubiq_score = self.evaluator.QUBIQ_score()
+        sd = self.evaluator.SD()
+        sa = self.evaluator.SA()
+        ged = self.evaluator.GED()
+
+        # print(' times for Test:' % (self.num_sample))
+        print("Test results")
+        print('[numImages: %5d]' % (i * self.args.batch_size + image.data.shape[0]))
+
+        print("Sampling QUBIQ score {}".format(qubiq_score))
+        print("Sampling GED score {}".format(ged))
+        print("Sampling diversity {}".format(sd))
+        print("Sampling accuracy {}".format(sa))
+        print('Sampling Dice: %.3f' % (test_loss))
 
 
 def main():

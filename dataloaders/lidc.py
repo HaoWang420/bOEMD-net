@@ -126,10 +126,13 @@ class LIDC_IDRI(Dataset):
         del data
 
     def __getitem__(self, index):
+
         image = np.expand_dims(self.images[index], axis=0)
 
         label = self.labels[index][np.random.randint(4)][None, ...]
         labels = np.stack(self.labels[index], axis=0)
+
+        labels = torch.from_numpy(labels)
 
         # Convert image and label to torch tensors
         image = (torch.from_numpy(image) - self.MEAN) / self.STD
@@ -138,6 +141,7 @@ class LIDC_IDRI(Dataset):
         #Convert uint8 to float tensors
         image = image.type(torch.FloatTensor)
         label = label.type(torch.FloatTensor)
+        labels = labels.type(torch.FloatTensor)
 
         # Normalise inputs
         if self.transform:
@@ -160,3 +164,19 @@ class LIDC_IDRI(Dataset):
 
     def std(self, ):
         return np.std(self.images)
+
+if __name__ == "__main__":
+    dataset = LIDC_IDRI()
+    dataset_size = len(dataset)
+    indices = list(range(dataset_size))
+    split = int(np.floor(0.1 * dataset_size))
+    np.random.shuffle(indices)
+
+    train_indices, test_indices, val_indices = indices[2*split:], indices[1*split:2*split], indices[:split]
+
+    train_sampler = SubsetRandomSampler(train_indices)
+    test_sampler = SubsetRandomSampler(test_indices)
+
+    for x, y in test_sampler:
+        print(x.shape)
+        print(y.shape)

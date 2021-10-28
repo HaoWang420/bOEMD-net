@@ -1,0 +1,18 @@
+python test_lidc.py \
+       --workers 4 \
+       --lr 0.5 \
+       --epochs 50 \
+       --gpu-ids 0 \
+       --batch-size 32 \
+       --test-batch-size 1 \
+       --checkname decoder-unet-lidc \
+       --eval-interval 5 \
+       --dataset lidc \
+       --loss-type dice \
+       --nchannels 1 \
+       --model decoder-unet \
+       --nclass 4 \
+       --task-num 0 \
+       --num-sample 50 \
+       --model-path /data/ssd/qingqiao/BOEMD_run_test/lidc/decoder-unet-lidc/experiment_06/checkpoint.pth.tar \
+       --save-path /data/ssd/qingqiao/BOEMD_run_test/

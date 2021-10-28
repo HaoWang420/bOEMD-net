@@ -1,7 +1,7 @@
 python train.py \
        --workers 4 \
-       --lr 10 \
-       --epochs 100 \
+       --lr 0.5 \
+       --epochs 200 \
        --gpu-ids 0 \
        --batch-size 32 \
        --test-batch-size 1 \
@@ -13,3 +13,4 @@ python train.py \
        --model attn-unet \
        --nclass 4 \
        --task-num 0
+       
