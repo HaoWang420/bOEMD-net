@@ -120,15 +120,29 @@ class Bayeisan_Trainer(object):
             image, target = sample['image'], sample['label']
             if self.args.cuda:
                 image, target = image.cuda(), target.cuda()
-
+            batch_size = image.shape[0]
             self.scheduler(self.optimizer, i, epoch, self.best_pred)
             self.optimizer.zero_grad()
+            kl = 0
+            if self.args.model != "voemd-unet":
+                output, kl = self.model(image)
+                # print("check for kl", output, kl)
+                beta = metrics.get_beta(i, len(self.train_loader), self.beta_type, epoch, self.num_epoch)
+                loss = self.criterion(output, target, kl, beta, self.train_length)
+            else:
+                output, mu_lists, logvar_lists = self.model(image)
+                assert len(mu_lists) == len(logvar_lists)
             
-            output, kl = self.model(image)
-            # print("check for kl", output, kl)
-            beta = metrics.get_beta(i, len(self.train_loader), self.beta_type, epoch, self.num_epoch)
-            
-            loss = self.criterion(output, target, kl, beta, self.train_length)
+                for ii, mu_list in enumerate(mu_lists):
+                    for jj, mu in enumerate(mu_list):
+                        temp = logvar_lists[ii][jj]
+                        # temp = temp.view(temp.shape[0], temp.shape[1], -1)
+                        # mu = mu.view(mu.shape[0], mu.shape[1], -1)
+
+                        kl += torch.mean(-0.5 * torch.sum(1 + temp - mu ** 2 - temp.exp(), dim = 1))
+                beta = metrics.get_beta(i, len(self.train_loader), self.beta_type, epoch, self.num_epoch)
+                # print(output.shape)
+                loss = self.criterion(output, target, kl, batch_size / self.train_length, beta)
             loss.backward()
             self.optimizer.step()
             train_loss += loss.item()
@@ -248,7 +262,11 @@ class Bayeisan_Trainer(object):
 
             with torch.no_grad():
 
-                predictions, kl = self.model(image)
+                if self.args.model != "voemd-unet":
+                    predictions, kl = self.model(image)
+                   
+                else:
+                    predictions, mu_lists, logvar_lists = self.model(image)
 
             if self.args.dataset == 'lidc-syn-rand':
                 predictions = predictions.reshape((self.num_sample, 3, predictions.shape[2], predictions.shape[3]))
@@ -380,7 +398,7 @@ def main():
     parser.add_argument('--workers', type=int, default=2,
                         metavar='N', help='dataloader threads')
     parser.add_argument('--loss-type', type=str, default='ELBO',
-                        choices=['soft-dice', 'dice', 'fb-dice', 'ce', 'level-thres', "ELBO"],
+                        choices=['soft-dice', 'dice', 'fb-dice', 'ce', 'level-thres', "ELBO", "vELBO"],
                         help='loss func type (default: ce)')
 
     # training hyper params
@@ -436,7 +454,7 @@ def main():
     parser.add_argument('--model', type=str, default='multi-bunet',
                         help='specify the model, default by unet',
                         choices=['unet', 'prob-unet', 'multi-unet', 'decoder-unet', 'attn-unet', 'pattn-unet',
-                                 'pattn-unet-al', "batten-unet", "multi-bunet", "multi-atten-bunet", "bOEOD-unet"])
+                                 'pattn-unet-al', "batten-unet", "multi-bunet", "multi-atten-bunet", "bOEOD-unet", "voemd-unet" ])
     parser.add_argument('--pretrained', type=str, default=None,
                         help='specify the path to pretrained model parameters')
 
@@ -482,7 +500,7 @@ def main():
         if not trainer.args.no_val and epoch % args.eval_interval == (args.eval_interval - 1):
             trainer.val_sample(epoch)
 
-    trainer.val_sample(50)
+    # trainer.val_sample(50)
     trainer.writer.close()
     # prefix = f"/home/qingqiao/bAttenUnet_test/weight_distribution/{args.dataset}/{str(args.task_num + 1)}/{args.model}"
     # # prefix = os.path.join(r"/home/qingqiao/bAttenUnet_test/", name)
