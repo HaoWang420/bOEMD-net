@@ -134,6 +134,7 @@ class LIDC_IDRI(Dataset):
         # Convert image and label to torch tensors
         image = (torch.from_numpy(image) - self.MEAN) / self.STD
         label = torch.from_numpy(label)
+        labels = torch.from_numpy(labels)
 
         #Convert uint8 to float tensors
         image = image.type(torch.FloatTensor)
