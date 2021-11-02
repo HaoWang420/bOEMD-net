@@ -2,7 +2,6 @@ import argparse
 import os
 import numpy as np
 from tqdm import tqdm
-import torchbnn as bnn
 import torch
 import math
 
@@ -18,7 +17,9 @@ from utils import metrics
 from torch.nn import functional as F
 import matplotlib.pyplot as plt
 import seaborn as sns
+def is_float(s):
 
+    return sum([n.isdigit() for n in s.strip().split('.')]) == 2
 
 class Bayeisan_Trainer(object):
     # Define Saver
@@ -31,13 +32,17 @@ class Bayeisan_Trainer(object):
         self.summary = TensorboardSummary(self.saver.experiment_dir)
         self.writer = self.summary.create_summary()
         # Define beta
-        self.beta_type = args.beta_type
+        if is_float(args.beta_type):
+            self.beta_type = float(args.beta_type)
+        else:
+            self.beta_type = args.beta_type
 
         # Define Dataloader
         kwargs = {'num_workers': args.workers, 'pin_memory': True}
         self.train_loader, self.val_loader, self.test_loader, self.nclass, \
         self.train_length = make_data_loader(args,
                                              **kwargs)
+        print("train_length", len(self.train_loader))
 
         print('number of classes: ', self.nclass)
 
@@ -60,9 +65,9 @@ class Bayeisan_Trainer(object):
         train_params = [{'params': model.parameters(), 'lr': args.lr}]
 
         # Define Optimizer
-        optimizer = torch.optim.SGD(train_params, momentum=args.momentum,
-                                    weight_decay=args.weight_decay, nesterov=args.nesterov)
-
+        # optimizer = torch.optim.SGD(train_params, momentum=args.momentum,
+        #                             weight_decay=args.weight_decay, nesterov=args.nesterov)
+        optimizer = torch.optim.Adam(train_params, weight_decay = args.weight_decay)
         # Define Criterion
 
         self.criterion = SegmentationLosses(nclass=self.nclass, weight=None, cuda=args.cuda).build_loss(
@@ -115,15 +120,29 @@ class Bayeisan_Trainer(object):
             image, target = sample['image'], sample['label']
             if self.args.cuda:
                 image, target = image.cuda(), target.cuda()
-
-#             self.scheduler(self.optimizer, i, epoch, self.best_pred)
+            batch_size = image.shape[0]
+            self.scheduler(self.optimizer, i, epoch, self.best_pred)
             self.optimizer.zero_grad()
+            kl = 0
+            if self.args.model != "voemd-unet":
+                output, kl = self.model(image)
+                # print("check for kl", output, kl)
+                beta = metrics.get_beta(i, len(self.train_loader), self.beta_type, epoch, self.num_epoch)
+                loss = self.criterion(output, target, kl, beta, self.train_length)
+            else:
+                output, mu_lists, logvar_lists = self.model(image)
+                assert len(mu_lists) == len(logvar_lists)
             
-            output, kl = self.model(image)
-            # print("check for kl", output, kl)
-            beta = metrics.get_beta(i, len(self.train_loader), self.beta_type, epoch, self.num_epoch)
-            
-            loss = self.criterion(output, target, kl, beta, self.train_length)
+                for ii, mu_list in enumerate(mu_lists):
+                    for jj, mu in enumerate(mu_list):
+                        temp = logvar_lists[ii][jj]
+                        # temp = temp.view(temp.shape[0], temp.shape[1], -1)
+                        # mu = mu.view(mu.shape[0], mu.shape[1], -1)
+
+                        kl += torch.mean(-0.5 * torch.sum(1 + temp - mu ** 2 - temp.exp(), dim = 1))
+                beta = metrics.get_beta(i, len(self.train_loader), self.beta_type, epoch, self.num_epoch)
+                # print(output.shape)
+                loss = self.criterion(output, target, kl, batch_size / self.train_length, beta)
             loss.backward()
             self.optimizer.step()
             train_loss += loss.item()
@@ -243,7 +262,11 @@ class Bayeisan_Trainer(object):
 
             with torch.no_grad():
 
-                predictions, kl = self.model(image)
+                if self.args.model != "voemd-unet":
+                    predictions, kl = self.model(image)
+                   
+                else:
+                    predictions, mu_lists, logvar_lists = self.model(image)
 
             if self.args.dataset == 'lidc-syn-rand':
                 predictions = predictions.reshape((self.num_sample, 3, predictions.shape[2], predictions.shape[3]))
@@ -375,7 +398,7 @@ def main():
     parser.add_argument('--workers', type=int, default=2,
                         metavar='N', help='dataloader threads')
     parser.add_argument('--loss-type', type=str, default='ELBO',
-                        choices=['soft-dice', 'dice', 'fb-dice', 'ce', 'level-thres', "ELBO"],
+                        choices=['soft-dice', 'dice', 'fb-dice', 'ce', 'level-thres', "ELBO", "vELBO"],
                         help='loss func type (default: ce)')
 
     # training hyper params
@@ -407,7 +430,7 @@ def main():
     parser.add_argument('--gpu-ids', type=str, default='0',
                         help='use which gpu to train, must be a \
                         comma-separated list of integers only (default=0)')
-    parser.add_argument('--seed', type=int, default=42, metavar='S',
+    parser.add_argument('--seed', type=int, default=1, metavar='S',
                         help='random seed (default: 1)')
 
     # checking point
@@ -431,7 +454,7 @@ def main():
     parser.add_argument('--model', type=str, default='multi-bunet',
                         help='specify the model, default by unet',
                         choices=['unet', 'prob-unet', 'multi-unet', 'decoder-unet', 'attn-unet', 'pattn-unet',
-                                 'pattn-unet-al', "batten-unet", "multi-bunet", "multi-atten-bunet", "bOEOD-unet"])
+                                 'pattn-unet-al', "batten-unet", "multi-bunet", "multi-atten-bunet", "bOEOD-unet", "voemd-unet" ])
     parser.add_argument('--pretrained', type=str, default=None,
                         help='specify the path to pretrained model parameters')
 
@@ -442,9 +465,11 @@ def main():
     parser.add_argument('--drop-p', type=float, default=0.5, help='probability of applying dropout')
 
     parser.add_argument('--task-num', type=int, default=1, help='task No. for uncertain dataset')
-    parser.add_argument('--num-sample', type=int, default=10, help="Sampling number")
-    parser.add_argument("--beta-type", action='store_const', default= 'standard', const='standard',
-                        help="the beta type default valu")
+    parser.add_argument('--num-sample', type=int, default=5, help="Sampling number")
+    parser.add_argument("--beta-type", default = '0.001', choices= ['Standard', '1.0' , '0.1', '10.0', '0.0001',  '0.001',
+    '0.000001', '0.0000001','Blundell', 'Soenderby', '0.000000001'] )
+    # parser.add_argument("--beta-type", action='store_const', default= 'standard', const='standard',
+    #                     help="the beta type default valu")
 
     # lidc synthetic data shuffle
     parser.add_argument('--shuffle', action='store_true', default=False, help='shuffle of lidc synthetic data')
@@ -470,12 +495,12 @@ def main():
     print('Total Epoches:', trainer.args.epochs)
     temp_epoch = 0
     for epoch in range(trainer.args.start_epoch, trainer.args.epochs):
-        # trainer.training(epoch)
+        trainer.training(epoch)
         
         if not trainer.args.no_val and epoch % args.eval_interval == (args.eval_interval - 1):
             trainer.val_sample(epoch)
 
-    trainer.val_sample(50)
+    # trainer.val_sample(50)
     trainer.writer.close()
     # prefix = f"/home/qingqiao/bAttenUnet_test/weight_distribution/{args.dataset}/{str(args.task_num + 1)}/{args.model}"
     # # prefix = os.path.join(r"/home/qingqiao/bAttenUnet_test/", name)

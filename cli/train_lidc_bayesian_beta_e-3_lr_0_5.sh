@@ -1,16 +1,17 @@
-python train.py \
+python train_bayesian.py \
        --workers 4 \
        --lr 0.5 \
        --epochs 200 \
        --gpu-ids 0 \
        --batch-size 32 \
        --test-batch-size 1 \
-       --checkname multi-unet-lidc \
+       --checkname battn_unet_e-3 \
        --eval-interval 5 \
        --dataset lidc \
-       --loss-type dice \
+       --loss-type ELBO \
        --nchannels 1 \
-       --model multi-unet \
-       --nclass 4 \
+       --model batten-unet \
+       --nclass 1 \
        --task-num 0 \
-       --save-path /data/ssd/qingqiao/BOEMD_run_test/
+       --beta-type 0.001 \
+       --save-path /data/ssd/qingqiao/BOEMD_run_test

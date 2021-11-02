@@ -4,10 +4,14 @@ import matplotlib.pyplot as plt
 import matplotlib.cm as cm
 
 from dataloaders.brats import UncertainBraTS
+from dataloaders.lidc import LIDC_IDRI
 from modeling.unet import *
+from modeling.bAttenUnet import MDecoderUNet
 from modeling.components import HookBasedFeatureExtractor
 import torch.nn.functional as F
+import cv2
 
+# from torch.utils.data.sampler import SubsetRandomSample
 
 def plotNNFilterOverlay(input_im, units, figure_id, interp='bilinear',
                         colormap=cm.jet, colormap_lim=None, title='', alpha=0.8):
@@ -70,31 +74,90 @@ def draw_attn():
 
     plt.savefig('test.png', dpi=500)
 
+
+def convert_to_uint8(image):
+    image = image - image.min()
+    image = 255.0 * np.divide(image.astype(np.float32), image.max())
+    return image.astype(np.uint8)
+
+def resize_image(im, size, interp=cv2.INTER_LINEAR):
+
+    im_resized = cv2.resize(im, (size[1], size[0]), interpolation=interp)  # swap sizes to account for weird OCV API
+    return im_resized
+
+def preproc_image(x, nlabels=None):
+    x_b = np.squeeze(x)
+
+    ims = x_b.shape[:2]
+
+    if nlabels:
+        x_b = np.uint8((x_b / (nlabels)) * 255)  # not nlabels - 1 because I prefer gray over white
+    else:
+        x_b = convert_to_uint8(x_b)
+
+    # x_b = cv2.cvtColor(np.squeeze(x_b), cv2.COLOR_GRAY2BGR)
+    # x_b = utils.histogram_equalization(x_b)
+    x_b = resize_image(x_b, (2 * ims[0], 2 * ims[1]), interp=cv2.INTER_NEAREST)
+
+    # ims_n = x_b.shape[:2]
+    # x_b = x_b[ims_n[0]//4:3*ims_n[0]//4, ims_n[1]//4: 3*ims_n[1]//4,...]
+    return x_b
+
+
 def draw_seg():
-    dataset = UncertainBraTS(None, mode='val', dataset='kidney', task=0, output='annotator')
-    n_classes = dataset.NCLASS
+    torch.cuda.cudann_enable = False
+    torch.manual_seed(1)
+    np.random.seed(1)
+    torch.cuda.manual_seed(1)
+    np.random.seed(1)
+    n_classes = 4
+    task_name = "lidc"
+
+    dataset = LIDC_IDRI( mode='qubiq')
+
+    dataset_size = len(dataset)
+    indices = list(range(dataset_size))
+    split = int(np.floor(0.1 * dataset_size))
+    np.random.shuffle(indices)
+
+    train_indices, test_indices, val_indices = indices[2*split:], indices[1*split:2*split], indices[:split]
+
+    
+    print("Number of training/test/validation patches:", (len(train_indices), len(test_indices), len(val_indices)) )
     n_channels = 1
+    index = test_indices[180]
 
-    params = torch.load('./run/uncertain-kidney/multi-unet-kidney/experiment_5/checkpoint.pth.tar')
-    # model = MultiUNet(n_channels, n_classes)
-    model = DecoderUNet(n_channels, n_classes, attention='prob-al')
+    
+    # params = torch.load(r'/data/ssd/qingqiao/BOEMD_run_test/lidc/unet-lidc/experiment_00/checkpoint.pth.tar')
+    # params = torch.load(r'')
+
+    params = torch.load(r'/data/ssd/qingqiao/BOEMD_run_test/lidc/battn_unet_e-2_new_loss/experiment_00/checkpoint.pth.tar')
+    # model = UNet(n_channels, n_classes)
+
+    model = MDecoderUNet(n_channels, n_classes)
+    # model = DecoderUNet(n_channels, n_classes, attention=None)
+    # model = DecoderUNet(n_channels, n_classes, attention= 'attn')
     model.load_state_dict(params['state_dict'])
+    print("index", index)
+    il = dataset[index]
 
-    il = dataset[1]
     x = il['image']
+
     y = il['label'][None, ...]
     
     dataset.original = True
-    x_p = dataset[1]['image']
+    x_p = dataset[index]['image']
 
+    
     sigmoid = nn.Sigmoid()
 
     model.eval()
     with torch.no_grad():
-        y_p = sigmoid(model(x[None, ...]))
+        y_p = sigmoid(model(x[None, ...])[0])
 
-    print(y_p.shape, y.shape)
     # s
+    # print(x, il['label'])
+    
     error_map = torch.zeros_like(y[0, 0])
     for ii in range(y_p.shape[1]):
         # y
@@ -113,21 +176,38 @@ def draw_seg():
             gamma_map += nn.functional.binary_cross_entropy(y_p[0, ii], y_p[0, jj], reduction='none')
     gamma_map /= y_p.shape[1]**2 - y_p.shape[1]
 
-    plt.subplot(1, 6, 1)
+    plt.figure()
     plotNNFilterOverlay(x_p[None, ...], np.zeros_like(x[None, ...]), 1, alpha=0)
+    plt.savefig("./figs/{}_image_{}.png".format(task_name, str(index)))
 
-    plt.subplot(1, 6, 2)
+    plt.figure()
     plotNNFilterOverlay(np.zeros_like(x_p[None, ...]), error_map[None, None, ...], 2, title='error map', alpha=0.5)
+    plt.savefig("./figs/{}_error_map_{}.png".format(task_name, str(index)))
 
-    for ii in range(y_p.shape[1]):
-        plt.subplot(1, 6, ii + 3)
-        plotNNFilterOverlay(y[:, ii:ii+1], np.zeros_like(y_p), ii + 4, title='sample {}'.format(ii), alpha=0)
+    for ii in range(y.shape[1]):
+        plt.figure()
 
-    plt.subplot(1, 6, 6)
-    plotNNFilterOverlay(np.zeros_like(x_p[None, ...]), gamma_map[None, None, ...], 3, title='gamma map', alpha=0.5)
+        # s_p_d = preproc_image(y[:, ii:ii+1], nlabels=2)
+        # plt.imshow(s_p_d, cmap='gray')
+        # plt.axis('off')
+        # plt.savefig("./figs/{}_ground_truth_{}_{}.png".format(task_name, str(ii),str(index)), bbox_inches= 'tight')
+        plotNNFilterOverlay(y[:, ii:ii+1], np.zeros_like(y), ii + 4, title='sample {}'.format(ii), alpha=0.1)
+        plt.savefig("./figs/{}_ground_truth_{}_{}.png".format(task_name, str(ii),str(index)))
 
-    plt.savefig('./figs/prediction/PAG-unet.png', dpi=500)
     
+    for ii in range(y_p.shape[1]):    
+        plt.figure()
+        # s_p_d = preproc_image(y_p[:, ii:ii+1], nlabels=2)
+        # plt.imshow(s_p_d, cmap='gray')
+        # plt.axis('off')
+        # plt.savefig("./figs/{}_sample_{}_{}.png".format(task_name, str(ii),str(index)), bbox_inches= 'tight')
+        plotNNFilterOverlay(y_p[:, ii:ii+1], np.zeros_like(y_p), ii + 4, title='sample {}'.format(ii), alpha=0.1)
+        plt.savefig("./figs/{}_sample_{}_{}.png".format(task_name, str(ii),str(index)))
+    
+    plt.figure()
+    plotNNFilterOverlay(np.zeros_like(x_p[None, ...]), gamma_map[None, None, ...], 3, title='gamma map', alpha=0.5)
+    plt.savefig("./figs/{}_gamma_map_{}.png".format(task_name, str(index)))
+    plt.close('all')
 
 if __name__ == "__main__":
     draw_seg()

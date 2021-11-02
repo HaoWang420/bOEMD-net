@@ -3,6 +3,11 @@ from .bAttenUnet_componets import BBBConv2d, ModuleWrapper
 import torch
 import torch.nn.functional as F
 
+from .unet_component import DoubleConv as UDoubleConv
+from .unet_component import Down as UDown
+from .unet_component import Up as Uup 
+
+
 
 class AttentionBlock(nn.Module):
     """
@@ -174,12 +179,12 @@ class Encoder(nn.Module):
     def __init__(self, n_channels, bilinear=True):
         super(Encoder, self).__init__()
         self.bilinear = bilinear
-        self.inc = DoubleConv(n_channels, 64)
-        self.down1 = Down(64, 128)
-        self.down2 = Down(128, 256)
-        self.down3 = Down(256, 512)
+        self.inc = UDoubleConv(n_channels, 64)
+        self.down1 = UDown(64, 128)
+        self.down2 = UDown(128, 256)
+        self.down3 = UDown(256, 512)
         factor = 2 if bilinear else 1
-        self.down4 = Down(512, 1024 // factor)
+        self.down4 = UDown(512, 1024 // factor)
 
     def forward(self, x):
         x1 = self.inc(x)
@@ -244,10 +249,10 @@ class Up(nn.Module):
         # if bilinear, use the normal convolutions to reduce the number of channels
         if bilinear:
             self.up = nn.Upsample(scale_factor=2, mode='bilinear', align_corners=True)
-            self.conv = DoubleConv(in_channels, out_channels, in_channels // 2)
+            self.conv = UDoubleConv(in_channels, out_channels, in_channels // 2)
         else:
             self.up = nn.ConvTranspose2d(in_channels, in_channels // 2, kernel_size=2, stride=2)
-            self.conv = DoubleConv(in_channels, out_channels)
+            self.conv = UDoubleConv(in_channels, out_channels)
 
         if attention == 'prob':
             self.attn = ProbBlock(in_channels // 2, in_channels // 2, in_channels // 4)
