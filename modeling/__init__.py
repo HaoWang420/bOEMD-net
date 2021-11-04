@@ -4,14 +4,14 @@ from modeling.unet import *
 from modeling.bAttenUnet import MDecoderUNet, MMultiBAUNet, MMultiBUNet, ODecoderUNet, ODecoderUNetWrapper
 
 
-def build_model(args, nchannels, nclass, model='unet'):
+def build_model(config, nchannels, nclass, model='unet'):
     if model == 'unet':
         return UNet(
             n_channels=nchannels,
             n_classes=nclass,
             bilinear=True,
-            dropout=args.dropout,
-            dropp=args.drop_p
+            dropout=config.dropout,
+            dropp=config.drop_p
         )
     elif model == "batten-unet":
         return MDecoderUNet(
@@ -25,48 +25,48 @@ def build_model(args, nchannels, nclass, model='unet'):
             n_channels=nchannels,
             n_classes=nclass,
             bilinear=True,
-            dropout=args.dropout,
-            dropp=args.drop_p
+            dropout=config.dropout,
+            dropp=config.drop_p
         )
     elif model == 'multi-unet':
         return MultiUNet(
             n_channels=nchannels,
             n_classes=nclass,
             bilinear=True,
-            dropout=args.dropout,
-            dropp=args.drop_p
+            dropout=config.dropout,
+            dropp=config.drop_p
         )
     elif model == 'decoder-unet':
         return DecoderUNet(
             n_channels=nchannels,
             n_classes=nclass,
             bilinear=True,
-            dropout=args.dropout,
-            dropp=args.drop_p
+            dropout=config.dropout,
+            dropp=config.drop_p
         )
     elif model == "multi-bunet":
         return MMultiBUNet(
             n_channels=nchannels,
             n_classes=nclass,
             bilinear=True,
-            dropout=args.dropout,
-            dropp=args.drop_p
+            dropout=config.dropout,
+            dropp=config.drop_p
         )
     elif model == "multi-atten-bunet":
         return MMultiBAUNet(
             n_channels=nchannels,
             n_classes=nclass,
             bilinear=True,
-            dropout=args.dropout,
-            dropp=args.drop_p
+            dropout=config.dropout,
+            dropp=config.drop_p
         )
     elif model == 'attn-unet':
         return DecoderUNet(
             n_channels=nchannels,
             n_classes=nclass,
             bilinear=True,
-            dropout=args.dropout,
-            dropp=args.drop_p,
+            dropout=config.dropout,
+            dropp=config.drop_p,
             attention='attn'
         )
     elif model == 'pattn-unet':
@@ -74,8 +74,8 @@ def build_model(args, nchannels, nclass, model='unet'):
             n_channels=nchannels,
             n_classes=nclass,
             bilinear=True,
-            dropout=args.dropout,
-            dropp=args.drop_p,
+            dropout=config.dropout,
+            dropp=config.drop_p,
             attention='prob',
         )
     elif model == 'pattn-unet-al':
@@ -83,8 +83,8 @@ def build_model(args, nchannels, nclass, model='unet'):
             n_channels=nchannels,
             n_classes=nclass,
             bilinear=True,
-            dropout=args.dropout,
-            dropp=args.drop_p,
+            dropout=config.dropout,
+            dropp=config.drop_p,
             attention='prob-al',
         )
     elif model == 'bOEOD-unet':
@@ -107,7 +107,7 @@ def build_transfer_learning_model(args, nchannels, nclass, pretrained, model='un
     """
     # hard coded class number for pretained UNet on BraTS
     pre_model = UNet(
-        n_channels=args.nchannels,
+        n_channels=args.model.nchannels,
         n_classes=3,
         bilinear=True,
         dropout=args.dropout,
@@ -118,14 +118,14 @@ def build_transfer_learning_model(args, nchannels, nclass, pretrained, model='un
     params = torch.load(pretrained)
     pre_model.load_state_dict(params['state_dict'])
     m = UNet(
-        n_channels=args.nchannels,
+        n_channels=args.model.nchannels,
         n_classes=nclass,
         bilinear=pre_model.bilinear,
         dropout=args.dropout,
         dropp=args.drop_p
     )
 
-    assert args.nchannels == pre_model.n_channels
+    assert args.model.nchannels == pre_model.n_channels
     m.inc = pre_model.inc
     m.down1 = pre_model.down1
     m.down2 = pre_model.down2

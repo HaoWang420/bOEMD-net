@@ -1,13 +1,15 @@
 import torch.nn.functional as F
 from torch import nn 
 from modeling.unet_component import *
+
 class VariationalDecoder(nn.Module):
     def __init__(self, n_classes, bilinear=True, attention=None):
         super(VariationalDecoder, self).__init__()
         self.bilinear = bilinear
-        print(bilinear)
         factor = 2 if bilinear else 1
-        print("factor is", factor)
+        self.mu_list = []
+        self.log_varlist = []
+
         self.mu = nn.Conv2d(512, 512 , kernel_size = 1)
         self.logvar = nn.Conv2d(512, 512 , kernel_size = 1)
 
@@ -77,8 +79,15 @@ class VariationalDecoder(nn.Module):
         x = self.up3(x, z2)
         x = self.up4(x, z1)
         logits = self.outc(x)
+        return logits
 
-        return logits, mu_list, logvar_list
+    def kl_loss(self, ):
+        kl = 0.0
+        if self.training:
+            for mu, logvar in zip(self.mu_list, self.logvar_list):
+                kl += torch.mean(-0.5 * torch.sum(1 + logvar - mu ** 2 - logvar.exp(), dim=1))
+
+        return kl
 
 class VUNet(nn.Module):
     def __init__(self, n_channels, n_classes, bilinear = True, attention = None):

@@ -42,6 +42,12 @@ STDS = {
         'kidney': 472.0944,
         'prostate': 300.0039
         }
+NCHANNEL = {
+    'brain-tumor': 4,
+    'brain-growth': 1,
+    'kidney': 1,
+    'prostate': 1
+}
 
 
 class UncertainBraTS(torch.utils.data.Dataset):
@@ -68,6 +74,7 @@ class UncertainBraTS(torch.utils.data.Dataset):
         self.dataset = dataset
         # set number of class(es)
         self.NCLASS = NANNOTATOR[dataset]
+        self.NCHANNEL = NCHANNEL[dataset]
         self.task = task
         self.output = output
 

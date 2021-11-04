@@ -1,0 +1,27 @@
+defaults:
+  - _self_
+  - dataset: lidc
+  - model: unet
+  - loss: dice
+  - optim: adam
+
+mode: "train"
+epochs: 100
+start_epoch: 0
+batch_size: 32
+test_batch_size: 32
+lr_scheduler: "poly"
+cuda: True
+gpu_ids: "0,1"
+seed: 42
+resume: NULL
+checkname: "test"
+save_path: "run"
+eval_interval: 5
+metrics:
+  - "qubiq"
+  - "ged"
+  - "sa"
+  - "sd"
+workers: 4
+pin_memory: False

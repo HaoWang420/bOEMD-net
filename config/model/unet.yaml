@@ -1,0 +1,3 @@
+name: unet
+dropout: False
+drop_p: 0.5

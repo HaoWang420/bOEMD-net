@@ -86,6 +86,7 @@ class LIDC_IDRI(Dataset):
     images = []
     labels = []
     series_uid = []
+    NCHANNEL= 1
     MEAN = 0.22223
     STD = 0.1843
 

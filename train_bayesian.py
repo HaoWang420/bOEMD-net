@@ -56,9 +56,9 @@ class Bayeisan_Trainer(object):
         model = None
 
         if args.pretrained is None:
-            model = build_model(args, args.nchannels, self.nclass, args.model)
+            model = build_model(args, args.model.nchannels, self.nclass, args.model)
         else:
-            model = build_transfer_learning_model(args, args.nchannels, self.nclass, args.pretrained)
+            model = build_transfer_learning_model(args, args.model.nchannels, self.nclass, args.pretrained)
 
         # set up the learning rate
         train_params = None
@@ -71,12 +71,12 @@ class Bayeisan_Trainer(object):
         # Define Criterion
 
         self.criterion = SegmentationLosses(nclass=self.nclass, weight=None, cuda=args.cuda).build_loss(
-            mode=args.loss_type)
+            mode=args.loss.name)
 
         self.model, self.optimizer = model, optimizer
 
         # Define Evaluator
-        self.evaluator = Evaluator(self.nclass, dice=True, loss=args.loss_type)
+        self.evaluator = Evaluator(self.nclass, dice=True, loss=args.loss.name)
 
         # Define lr scheduler
         self.scheduler = LR_Scheduler(args.lr_scheduler, args.lr,
@@ -490,50 +490,21 @@ def main():
     torch.manual_seed(args.seed)
     np.random.seed(args.seed)
     torch.cuda.manual_seed(args.seed)
-    trainer = Bayeisan_Trainer(args)
+
+    # TODO
+    # build trainer
+    trainer = None
+
     print('Starting Epoch:', trainer.args.start_epoch)
     print('Total Epoches:', trainer.args.epochs)
-    temp_epoch = 0
+
     for epoch in range(trainer.args.start_epoch, trainer.args.epochs):
         trainer.training(epoch)
         
         if not trainer.args.no_val and epoch % args.eval_interval == (args.eval_interval - 1):
             trainer.val_sample(epoch)
 
-    # trainer.val_sample(50)
     trainer.writer.close()
-    # prefix = f"/home/qingqiao/bAttenUnet_test/weight_distribution/{args.dataset}/{str(args.task_num + 1)}/{args.model}"
-    # # prefix = os.path.join(r"/home/qingqiao/bAttenUnet_test/", name)
-    # name = 'Attention_Unet_Bayes_By_Backprop'
-    # if not os.path.exists(prefix):
-    #     os.makedirs(prefix)
-    # SNR_vector = trainer.get_weight_SNR()
-    # np.save(os.path.join(prefix, "snr_vector.npy"), SNR_vector)
-    #
-    # fig = plt.figure(dpi=100)
-    # ax = fig.add_subplot(111)
-    #
-    # sns.distplot(10 * np.log10(SNR_vector), norm_hist=False, label=name, ax=ax)
-    #
-    # ax.set_ylabel('Density')
-    # ax.legend()
-    # plt.title('SNR (dB) density: Total parameters: %d' % (len(SNR_vector)))
-    # fig.savefig(os.path.join(prefix, 'snr.png'))
-    #
-    # Nsamples = 20
-    # KLD_vector = trainer.get_weight_KLD(Nsamples)
-    # np.save(os.path.join(prefix, "kld_vector.npy"), KLD_vector)
-    #
-    # fig = plt.figure(dpi=100)
-    # ax = fig.add_subplot(111)
-    #
-    # sns.distplot(KLD_vector, norm_hist=False, label=name, ax=ax)
-    # ax.set_ylabel('Density')
-    # ax.legend()
-    # plt.title('KLD density: Total parameters: %d, Nsamples: %d' % (len(KLD_vector), Nsamples))
-    # fig.savefig(os.path.join(prefix, "kld.png"))
-    # plt.close()
-
 
 if __name__ == "__main__":
     main()

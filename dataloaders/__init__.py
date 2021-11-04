@@ -12,58 +12,25 @@ import random
 import pickle
 
 def make_data_loader(args, **kwargs):
-    output = 'threshold'
-    if args.loss_type == 'ce' or args.loss_type == 'level-thres':
-        output = 'leveling'
-    else:
-        output = 'annotator'
 
-    if args.dataset == 'uncertain-brats':
-        train_set = UncertainBraTS(mode='train', dataset='brain-tumor', task=args.task_num, output=output)
-        val_set = UncertainBraTS(mode='val', dataset='brain-tumor', task=args.task_num, output=output)
-        test_set = UncertainBraTS(mode='test', dataset='brain-tumor', task=args.task_num, output=output)
+    if args.dataset.name == 'qubiq':
+        output = 'threshold'
+        if args.loss.name == 'ce' or args.loss.name == 'level-thres':
+            output = 'leveling'
+        else:
+            output = 'annotator'
 
-        nclass = train_set.NCLASS
-        train_loader = DataLoader(train_set, batch_size=args.batch_size, shuffle=True, **kwargs)
-        val_loader = DataLoader(val_set, batch_size=args.test_batch_size, shuffle=False, **kwargs)
-        test_loader = DataLoader(test_set, batch_size=args.test_batch_size, shuffle=False, **kwargs)
-
-        return train_loader, val_loader, test_loader, nclass, len(train_set)
-    if args.dataset == 'uncertain-brain-growth':
-        train_set = UncertainBraTS(mode='train', dataset='brain-growth', task=0, output=output)
-        val_set = UncertainBraTS(mode='val', dataset='brain-growth', task=0, output=output)
-        test_set = UncertainBraTS(mode='test', dataset='brain-growth', task=0, output=output)
+        train_set = UncertainBraTS(mode='train', dataset=args.dataset.task, task=args.dataset.task_id, output=output)
+        val_set = UncertainBraTS(mode='val', dataset=args.dataset.task, task=args.dataset.task_id, output=output)
+        test_set = UncertainBraTS(mode='test', dataset=args.dataset.task, task=args.dataset.task_id, output=output)
 
         nclass = train_set.NCLASS
-        train_loader = DataLoader(train_set, batch_size=args.batch_size, shuffle=True, **kwargs)
-        val_loader = DataLoader(val_set, batch_size=args.test_batch_size, shuffle=False, **kwargs)
-        test_loader = DataLoader(test_set, batch_size=args.test_batch_size, shuffle=False, **kwargs)
+        nchannel = train_set.NCHANNEL
+        train_loader = DataLoader(train_set, batch_size=args.batch_size, shuffle=True, num_workers=args.workers, pin_memory=False)
+        val_loader = DataLoader(val_set, batch_size=args.test_batch_size, shuffle=False, num_workers=args.workers, pin_memory=False)
+        test_loader = DataLoader(test_set, batch_size=args.test_batch_size, shuffle=False, num_workers=args.workers, pin_memory=False)
 
-        return train_loader, val_loader, test_loader, nclass, len(train_set)
-
-    if args.dataset == 'uncertain-kidney':
-        train_set = UncertainBraTS(mode='train', dataset='kidney', task=0, output=output)
-        val_set = UncertainBraTS(mode='val', dataset='kidney', task=0, output=output)
-        test_set = UncertainBraTS(mode='test', dataset='kidney', task=0, output=output)
-
-        nclass = train_set.NCLASS
-        train_loader = DataLoader(train_set, batch_size=args.batch_size, shuffle=True, **kwargs)
-        val_loader = DataLoader(val_set, batch_size=args.test_batch_size, shuffle=False, **kwargs)
-        test_loader = DataLoader(test_set, batch_size=args.test_batch_size, shuffle=False, **kwargs)
-
-        return train_loader, val_loader, test_loader, nclass, len(train_set)
-
-    if args.dataset == 'uncertain-prostate':
-        train_set = UncertainBraTS(mode='train', dataset='prostate', task=args.task_num, output=output)
-        val_set = UncertainBraTS(mode='val', dataset='prostate', task=args.task_num, output=output)
-        test_set = UncertainBraTS(mode='test', dataset='prostate', task=args.task_num, output=output)
-
-        nclass = train_set.NCLASS
-        train_loader = DataLoader(train_set, batch_size=args.batch_size, shuffle=True, **kwargs)
-        val_loader = DataLoader(val_set, batch_size=args.test_batch_size, shuffle=False, **kwargs)
-        test_loader = DataLoader(test_set, batch_size=args.test_batch_size, shuffle=False, **kwargs)
-
-        return train_loader, val_loader, test_loader, nclass, len(train_set)
+        return train_loader, val_loader, test_loader, nclass, nchannel, len(train_set)
 
     if args.dataset == 'brats':
         train_set = BraTSSet(args)
@@ -72,14 +39,15 @@ def make_data_loader(args, **kwargs):
 
         nclass = train_set.NCLASS
 
-        train_loader = DataLoader(train_set, batch_size=args.batch_size, shuffle=True, **kwargs)
-        val_loader = DataLoader(val_set, batch_size=args.batch_size, shuffle=False, **kwargs)
+        train_loader = DataLoader(train_set, batch_size=args.batch_size, shuffle=True, num_workers=args.workers, pin_memory=False)
+        val_loader = DataLoader(val_set, batch_size=args.batch_size, shuffle=False, num_workers=args.workers, pin_memory=False)
         test_loader = None
 
         return train_loader, val_loader, test_loader, nclass, len(train_set)
     
-    if args.dataset == 'lidc':
+    elif args.dataset == 'lidc':
         nclass = 4
+        nchannel = 1
         dataset = LIDC_IDRI(transform=None, mode='qubiq')
 
         dataset_size = len(dataset)
@@ -89,18 +57,10 @@ def make_data_loader(args, **kwargs):
 
         train_indices, test_indices, val_indices = indices[2*split:], indices[1*split:2*split], indices[:split]
 
-        train_sampler = SubsetRandomSampler(train_indices)
-        test_sampler = SubsetRandomSampler(test_indices)
-        val_sampler = SubsetRandomSampler(val_indices)
-        train_loader = DataLoader(dataset, batch_size=args.batch_size, sampler=train_sampler)
-        test_loader = DataLoader(dataset, batch_size=args.test_batch_size, sampler=test_sampler)
-        validation_loader = DataLoader(dataset, batch_size=args.test_batch_size, sampler=val_sampler)
-        print("Number of training/test/validation patches:", (len(train_indices), len(test_indices), len(val_indices)))
 
-        return train_loader, test_loader, validation_loader, nclass, len(train_indices)
-
-    if args.dataset == 'lidc-syn':
+    elif args.dataset == 'lidc-syn':
         nclass = 3
+        nchannel = 1
         dataset = LIDC_SYN(transform=None, shuffle=args.shuffle)
 
         dataset_size = len(dataset)
@@ -110,18 +70,9 @@ def make_data_loader(args, **kwargs):
 
         train_indices, test_indices, val_indices = indices[8*split:], indices[1*split:2*split], indices[:split]
 
-        train_sampler = SubsetRandomSampler(train_indices)
-        test_sampler = SubsetRandomSampler(test_indices)
-        val_sampler = SubsetRandomSampler(val_indices)
-        train_loader = DataLoader(dataset, batch_size=args.batch_size, sampler=train_sampler)
-        test_loader = DataLoader(dataset, batch_size=args.test_batch_size, sampler=test_sampler)
-        validation_loader = DataLoader(dataset, batch_size=args.test_batch_size, sampler=val_sampler)
-        print("Number of training/test/validation patches:", (len(train_indices), len(test_indices), len(val_indices)))
-
-        return train_loader, validation_loader, test_loader, nclass, len(train_indices)
-
-    if args.dataset == 'lidc-syn-rand':
+    elif args.dataset == 'lidc-syn-rand':
         nclass = 1
+        nchannel = 1
 
         dataset = LIDC_SYN(transform=None, mode='rand')
 
@@ -131,20 +82,11 @@ def make_data_loader(args, **kwargs):
         np.random.shuffle(indices)
 
         train_indices, test_indices, val_indices = indices[8*split:], indices[1*split:2*split], indices[:split]
-
-        train_sampler = SubsetRandomSampler(train_indices)
-        test_sampler = SubsetRandomSampler(test_indices)
-        val_sampler = SubsetRandomSampler(val_indices)
-        train_loader = DataLoader(dataset, batch_size=args.batch_size, sampler=train_sampler)
-        test_loader = DataLoader(dataset, batch_size=args.test_batch_size, sampler=test_sampler)
-        validation_loader = DataLoader(dataset, batch_size=args.test_batch_size, sampler=val_sampler)
-        print("Number of training/test/validation patches:", (len(train_indices), len(test_indices), len(val_indices)))
-
-        return train_loader, validation_loader, test_loader, nclass, len(train_indices)
         
     # randomly samples a label during trainning
-    if args.dataset == 'lidc-rand':
+    elif args.dataset == 'lidc-rand':
         nclass = 1
+        nchannel = 1
         location = '/home/wanghao/datasets/'
 
         dataset = LIDC_IDRI(dataset_location=location, transform=None, mode='ged')
@@ -156,14 +98,15 @@ def make_data_loader(args, **kwargs):
 
         train_indices, test_indices, val_indices = indices[2*split:], indices[1*split:2*split], indices[:split]
 
-        train_sampler = SubsetRandomSampler(train_indices)
-        test_sampler = SubsetRandomSampler(test_indices)
-        val_sampler = SubsetRandomSampler(val_indices)
-        train_loader = DataLoader(dataset, batch_size=args.batch_size, sampler=train_sampler)
-        test_loader = DataLoader(dataset, batch_size=args.test_batch_size, sampler=test_sampler)
-        validation_loader = DataLoader(dataset, batch_size=args.test_batch_size, sampler=val_sampler)
-        print("Number of training/test/validation patches:", (len(train_indices), len(test_indices), len(val_indices)))
+    else:
+        raise NotImplementedError
 
-        return train_loader, validation_loader, test_loader, nclass, len(train_indices)
-    
-    raise NotImplementedError
+    train_sampler = SubsetRandomSampler(train_indices)
+    test_sampler = SubsetRandomSampler(test_indices)
+    val_sampler = SubsetRandomSampler(val_indices)
+    train_loader = DataLoader(dataset, batch_size=args.batch_size, sampler=train_sampler, num_workers=args.workers, pin_memory=False)
+    test_loader = DataLoader(dataset, batch_size=args.test_batch_size, sampler=test_sampler, num_workers=args.workers, pin_memory=False)
+    validation_loader = DataLoader(dataset, batch_size=args.test_batch_size, sampler=val_sampler, num_workers=args.workers, pin_memory=False)
+    print("Number of training/test/validation patches:", (len(train_indices), len(test_indices), len(val_indices)))
+
+    return train_loader, validation_loader, test_loader, nclass, nchannel, len(train_indices)

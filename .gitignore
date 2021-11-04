@@ -1,6 +1,7 @@
 *.swp
 run_laplace_results/*
-run/*
+run
+multirun
 *.pth.tar
 *.pyc
 *.png
@@ -11,3 +12,5 @@ weight_distribution*
 
 __pycache__
 .ipynb_checkpoints
+.hydra
+*.log
