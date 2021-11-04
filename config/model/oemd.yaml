@@ -1,1 +1,4 @@
 name: "oemd"
+attention: NULL
+dropout: False
+drop_p: 0.2

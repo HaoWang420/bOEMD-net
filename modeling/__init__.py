@@ -2,6 +2,7 @@ import os
 import torch
 from modeling.unet import *
 from modeling.bAttenUnet import MDecoderUNet, MMultiBAUNet, MMultiBUNet, ODecoderUNet, ODecoderUNetWrapper
+from modeling.variantional_unet import VUNet
 
 
 def build_model(config, nchannels, nclass, model='unet'):
@@ -60,32 +61,14 @@ def build_model(config, nchannels, nclass, model='unet'):
             dropout=config.dropout,
             dropp=config.drop_p
         )
-    elif model == 'attn-unet':
+    elif model == 'oemd':
         return DecoderUNet(
             n_channels=nchannels,
             n_classes=nclass,
             bilinear=True,
             dropout=config.dropout,
             dropp=config.drop_p,
-            attention='attn'
-        )
-    elif model == 'pattn-unet':
-        return DecoderUNet(
-            n_channels=nchannels,
-            n_classes=nclass,
-            bilinear=True,
-            dropout=config.dropout,
-            dropp=config.drop_p,
-            attention='prob',
-        )
-    elif model == 'pattn-unet-al':
-        return DecoderUNet(
-            n_channels=nchannels,
-            n_classes=nclass,
-            bilinear=True,
-            dropout=config.dropout,
-            dropp=config.drop_p,
-            attention='prob-al',
+            attention=config.attention
         )
     elif model == 'bOEOD-unet':
         return ODecoderUNetWrapper(
@@ -93,6 +76,11 @@ def build_model(config, nchannels, nclass, model='unet'):
             n_classes=nclass,
             bilinear=True,
             attention='attn'
+        )
+    elif model == 'vae':
+        return VUNet(
+            n_channels=nchannels,
+            n_classes=nclass
         )
     else:
         raise NotImplementedError

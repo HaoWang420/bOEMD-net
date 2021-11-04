@@ -4,6 +4,8 @@ defaults:
   - model: unet
   - loss: dice
   - optim: adam
+  - override hydra/job_logging: colorlog
+  - override hydra/job_logging: colorlog
 
 mode: "train"
 epochs: 100

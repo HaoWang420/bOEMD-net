@@ -133,8 +133,6 @@ class LIDC_IDRI(Dataset):
         label = self.labels[index][np.random.randint(4)][None, ...]
         labels = np.stack(self.labels[index], axis=0)
 
-        labels = torch.from_numpy(labels)
-
         # Convert image and label to torch tensors
         image = (torch.from_numpy(image) - self.MEAN) / self.STD
         label = torch.from_numpy(label)

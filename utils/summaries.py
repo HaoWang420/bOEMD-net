@@ -22,7 +22,7 @@ class TensorboardSummary(object):
                         target[-1:, -1:].detach().cpu().data, 
                         normalize=False, 
                         )
-        writer.add_image('Ground Truth label', target_grid, global_step)
+        writer.add_image('Ground_Truth_label', target_grid, global_step)
 
 
         # sigmoid activation to produce probability map
@@ -30,7 +30,7 @@ class TensorboardSummary(object):
                         self.__sigmoid(pred[-1:, -1:].detach().cpu().data), 
                         normalize=False,
                         )
-        writer.add_image('Predicted label', pred_grid, global_step)
+        writer.add_image('Predicted_label', pred_grid, global_step)
 
     @staticmethod
     def __sigmoid(x):

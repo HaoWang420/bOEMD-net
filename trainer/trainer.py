@@ -60,7 +60,7 @@ class Trainer(object):
 
 
         # Define Evaluator
-        self.evaluator = Evaluator(self.nclass, loss=args.loss.name)
+        self.evaluator = Evaluator(self.nclass, loss=args.loss.name, metrics=args.metrics)
 
         # Define lr scheduler
         self.scheduler = LR_Scheduler(args.lr_scheduler, args.optim.lr,

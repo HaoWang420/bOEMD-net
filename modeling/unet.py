@@ -22,16 +22,28 @@ class DecoderUNet(nn.Module):
         self.bilinear = bilinear
         self.dropout = dropout
         self.dropp = dropp
+
+        if self.dropout:
+            self.drop = nn.Dropout2d(dropp)
         self.encoder = Encoder(n_channels, bilinear)
 
         for ii in range(n_classes):
             self.add_module('unet'+ str(ii), Decoder(1, attention=attention))
     
+    def eval(self, mode: bool = True):
+        super().eval(mode=mode)
+        self.drop.train()
+        return self
 
     def forward(self, x):
         n, c, h, w = x.shape
         out = []
         x = self.encoder(x)
+
+        if self.dropout:
+            # dropout at bottleneck
+            x[0] = self.drop(x[0])
+
         for ii in range(self.n_classes):
             out.append(self.__dict__['_modules']['unet' + str(ii)](x))
 

@@ -1,6 +1,7 @@
 import torch.nn.functional as F
 from torch import nn 
 from modeling.unet_component import *
+from modeling.bAttenUnet import ModuleWrapper
 
 class VariationalDecoder(nn.Module):
     def __init__(self, n_classes, bilinear=True, attention=None):
@@ -89,9 +90,9 @@ class VariationalDecoder(nn.Module):
 
         return kl
 
-class VUNet(nn.Module):
-    def __init__(self, n_channels, n_classes, bilinear = True, attention = None):
-        super(VUNet, self).__init__()
+class _VUNet(nn.Module):
+    def __init__(self, n_channels, n_classes, bilinear=True, attention=None):
+        super(_VUNet, self).__init__()
         self.n_channels = n_channels
         self.n_classes = n_classes
         self.bilinear = bilinear
@@ -107,17 +108,16 @@ class VUNet(nn.Module):
         n, c, h, w = x.shape
         x = self.encoder(x)
 
-        mu_lists = []
-        logvar_lists = []
         out = []
         for ii in range(self.n_classes):
-            temp = self.__dict__['_modules']['unet' + str(ii)](x)
-            out.append(temp[0])
-            mu_lists.append(temp[1])
-            logvar_lists.append(temp[2])
+            out.append(self.__dict__['_modules']['unet' + str(ii)](x))
         
-        return torch.cat(out, dim = 1), mu_lists, logvar_lists
+        return torch.cat(out, dim=1)
     
+class VUNet(ModuleWrapper):
+    def __init__(self, n_channels, n_classes, bilinear=True, attention=None):
+        super().__init__()
+        self.module_ = _VUNet(n_channels, n_classes, bilinear=bilinear, attention=attention)
 
 if __name__ == "__main__":
     model= VUNet(1,4)

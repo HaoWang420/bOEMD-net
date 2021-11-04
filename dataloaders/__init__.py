@@ -32,7 +32,7 @@ def make_data_loader(args, **kwargs):
 
         return train_loader, val_loader, test_loader, nclass, nchannel, len(train_set)
 
-    if args.dataset == 'brats':
+    if args.dataset.name == 'brats':
         train_set = BraTSSet(args)
         val_set = BraTSSet(train=False)
         test_set = None
@@ -45,7 +45,7 @@ def make_data_loader(args, **kwargs):
 
         return train_loader, val_loader, test_loader, nclass, len(train_set)
     
-    elif args.dataset == 'lidc':
+    elif args.dataset.name == 'lidc':
         nclass = 4
         nchannel = 1
         dataset = LIDC_IDRI(transform=None, mode='qubiq')
@@ -58,7 +58,7 @@ def make_data_loader(args, **kwargs):
         train_indices, test_indices, val_indices = indices[2*split:], indices[1*split:2*split], indices[:split]
 
 
-    elif args.dataset == 'lidc-syn':
+    elif args.dataset.name == 'lidc-syn':
         nclass = 3
         nchannel = 1
         dataset = LIDC_SYN(transform=None, shuffle=args.shuffle)
@@ -70,7 +70,7 @@ def make_data_loader(args, **kwargs):
 
         train_indices, test_indices, val_indices = indices[8*split:], indices[1*split:2*split], indices[:split]
 
-    elif args.dataset == 'lidc-syn-rand':
+    elif args.dataset.name == 'lidc-syn-rand':
         nclass = 1
         nchannel = 1
 
@@ -84,7 +84,7 @@ def make_data_loader(args, **kwargs):
         train_indices, test_indices, val_indices = indices[8*split:], indices[1*split:2*split], indices[:split]
         
     # randomly samples a label during trainning
-    elif args.dataset == 'lidc-rand':
+    elif args.dataset.name == 'lidc-rand':
         nclass = 1
         nchannel = 1
         location = '/home/wanghao/datasets/'

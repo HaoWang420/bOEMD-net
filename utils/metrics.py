@@ -66,19 +66,18 @@ def dice_coef(preds, targets, nclass):
     return torch.mean(loss)
 
 class Evaluator(object):
-    def __init__(self, num_class, dice=False, model='unet', loss='dice', metrics=['qubiq', 'dice', 'ged', 'sd', 'sa']):
+    def __init__(self, num_class, dice=False, model='unet', loss='dice', metrics=['qubiq', 'ged', 'sd', 'sa']):
         self.model = model
         self.dice=dice
         self.loss = loss
         self.metrics = metrics
+        self.results = {}
 
-        self.mdice = []
-        self.dice_class = []
-        self.qubiq = []
-        self.sd = []
-        self.ged = []
-        self.sa = []
-        
+        for metric in metrics:
+            self.results[metric] = []
+            if metric == 'dice':
+                self.results['dice_class'] = []
+
     def __sigmoid(self, x):
         # prevent numerical overflow
         x = np.clip(x, -88.72, 88.72)
@@ -230,74 +229,38 @@ class Evaluator(object):
 
         # get QUBIQ uncertainty estimate
         if 'qubiq' in self.metrics:
-            self.qubiq.append(self.QUBIQ(gt_image, pre_image))
+            self.results['qubiq'].append(self.QUBIQ(gt_image, pre_image))
         if 'dice' in self.metrics:
             mdice, dice_class = self._dice_coef(gt_image, pre_image_sig)
-            self.mdice.append(mdice)
-            self.dice_class.append(dice_class)
+            self.results['dice'].append(mdice)
+            self.results['dice_class'].append(dice_class)
         if 'ged' in self.metrics:
             n = pre_image.shape[0]
             for ii in range(n):
-                self.ged.append(generalised_energy_distance(pre_image_sig[ii] > 0.9, gt_image[ii]))
+                self.results['ged'].append(generalised_energy_distance(pre_image_sig[ii] > 0.9, gt_image[ii]))
         if 'sd' in self.metrics:
             # sample diversity
             n = pre_image.shape[0]
             for ii in range(n):
-                self.sd.append(self.sample_diversity(pre_image_sig[ii] > 0.9, gt_image[ii]))
+                self.results['sd'].append(self.sample_diversity(pre_image_sig[ii] > 0.9, gt_image[ii]))
         
         if 'sa' in self.metrics:
             # sample accuracy
             n = pre_image.shape[0]
             for ii in range(n):
-                self.sa.append(self.sample_accuracy(pre_image_sig[ii] > 0.9, gt_image[ii]))
+                self.results['sa'].append(self.sample_accuracy(pre_image_sig[ii] > 0.9, gt_image[ii]))
 
     def reset(self):
-        self.mdice.clear()
-        self.dice_class.clear()
-        self.qubiq.clear()
-        self.ged.clear()
-        self.sd.clear()
-        self.sa.clear()
+        for metric in self.results:
+            self.results[metric].clear()
 
-    def Dice_score(self):
-        result = np.mean(self.mdice)
+    def compute(self, ):
+        results = {}
+        for metric in self.results:
+            results[metric] = np.mean(self.results[metric])
         
-        return result
-
-    def Dice_score_class(self):
-        result = np.mean(np.array(self.dice_class), axis=0)
-        
-        return result
-
-    def QUBIQ_score(self):
-        print("class score: {}".format(np.mean(self.qubiq, axis=0)))
-        # print(self.qubiq[0].shape)
-        return np.mean(np.mean(self.qubiq, axis=1))
-
-    def Hausdorff_score(self):
-        return np.mean(self.hausdorff)
-
-    def GED(self):
-        return np.mean(self.ged)
-
-    def SD(self):
-        return np.mean(self.sd)
+        return results
     
-    def SA(self):
-        return np.mean(self.sa)
-    
-    def save(self, path):
-        qubiq = np.array(self.qubiq)
-        ged = np.array(self.ged)
-        sd = np.array(self.sd)
-        sa = np.array(self.sa)
-
-        np.save(os.path.join(path, 'qubiq.npy'), qubiq)
-        np.save(os.path.join(path, 'ged.npy'), ged)
-        np.save(os.path.join(path, 'sd.npy'), sd)
-        np.save(os.path.join(path, 'sa.npy'), sa)
-
-
     @staticmethod
     def sample_diversity(sample_arr, gt_arr=None):
 

@@ -46,7 +46,7 @@ class Encoder(nn.Module):
         x4 = self.down3(x3)
         x5 = self.down4(x4)
 
-        return x5, x4, x3, x2, x1
+        return [x5, x4, x3, x2, x1]
 
 
 class Decoder(nn.Module):

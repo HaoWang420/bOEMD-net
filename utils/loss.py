@@ -4,7 +4,7 @@ import torch.nn as nn
 
 
 class SegmentationLosses(object):
-    def __init__(self, nclass, weight=None, size_average=True, batch_average=True, cuda=False, ignore_index=True, alpha=1.0):
+    def __init__(self, args, nclass, weight=None, size_average=True, batch_average=True, cuda=False, ignore_index=True, alpha=1.0):
         self.ignore_index = ignore_index
         self.weight = weight
         self.size_average = size_average
@@ -26,7 +26,7 @@ class SegmentationLosses(object):
             return self.ThresholdLeveling
         elif mode == 'fb-dice':
             return self.ForeBackGroundDice
-        elif mode == "ELBO":
+        elif mode == "elbo":
             return self.ELBO
         else:
             raise NotImplementedError
