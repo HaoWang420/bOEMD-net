@@ -107,7 +107,7 @@ class Trainer(object):
             if self.args.cuda:
                 image, target = image.cuda(), target.cuda()
 
-            # self.scheduler(self.optimizer, i, epoch, self.best_pred)
+            self.scheduler(self.optimizer, i, epoch, self.best_pred)
             self.optimizer.zero_grad()
 
             output = self.model(image)
@@ -125,7 +125,7 @@ class Trainer(object):
         global_step = i + num_img_tr * epoch
         self.summary.visualize(self.writer, image, target, output, global_step)
 
-        self.writer.add_scalar('train/total_loss_epoch', train_loss / i, epoch)
+        self.writer.add_scalar('train/total_loss_epoch', train_loss / (i + 1), epoch)
         print('[Epoch: %d, numImages: %5d]' % (epoch, i * self.args.batch_size + image.data.shape[0]))
         print('Loss: %.3f' % (train_loss))
 

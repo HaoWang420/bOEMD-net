@@ -43,21 +43,10 @@ class BayesianTrainer(Trainer):
     def forward_iter(self, image, target, epoch, step):
         kl = 0.
         beta = metrics.get_beta(step, len(self.train_loader), self.beta_type, epoch, self.num_epoch)
-        if self.args.model != "voemd-unet":
-            output, kl = self.model(image)
-            # print("check for kl", output, kl)
-            loss = self.criterion(output, target, kl, beta, self.train_length)
-        else:
-            output, mu_lists, logvar_lists = self.model(image)
-            assert len(mu_lists) == len(logvar_lists)
-        
-            for ii, mu_list in enumerate(mu_lists):
-                for jj, mu in enumerate(mu_list):
-                    temp = logvar_lists[ii][jj]
 
-                    kl += torch.mean(-0.5 * torch.sum(1 + temp - mu ** 2 - temp.exp(), dim = 1))
-            # print(output.shape)
-            loss = self.criterion(output, target, kl, beta, self.train_length)
+        output, kl = self.model(image)
+        # print("check for kl", output, kl)
+        loss = self.criterion(output, target, kl, beta, self.train_length)
         
         return output, kl, loss
     
