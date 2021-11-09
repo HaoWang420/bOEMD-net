@@ -101,9 +101,11 @@ def make_data_loader(args, **kwargs):
     else:
         raise NotImplementedError
 
+    print(dataset_size)
     train_sampler = SubsetRandomSampler(train_indices)
     test_sampler = SubsetRandomSampler(test_indices)
     val_sampler = SubsetRandomSampler(val_indices)
+    print(val_indices)
     train_loader = DataLoader(dataset, batch_size=args.batch_size, sampler=train_sampler, num_workers=args.workers, pin_memory=False)
     test_loader = DataLoader(dataset, batch_size=args.test_batch_size, sampler=test_sampler, num_workers=args.workers, pin_memory=False)
     validation_loader = DataLoader(dataset, batch_size=args.test_batch_size, sampler=val_sampler, num_workers=args.workers, pin_memory=False)

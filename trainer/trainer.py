@@ -141,6 +141,7 @@ class Trainer(object):
                 image, target = image.cuda(), target.cuda()
             with torch.no_grad():
                 output = self.model(image)
+            print(image.shape)
 
             tbar.set_description(f'Val/Epoch {epoch}')
             

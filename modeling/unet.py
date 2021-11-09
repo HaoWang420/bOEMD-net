@@ -30,9 +30,12 @@ class DecoderUNet(nn.Module):
         for ii in range(n_classes):
             self.add_module('unet'+ str(ii), Decoder(1, attention=attention))
     
-    def eval(self, mode: bool = True):
-        super().eval(mode=mode)
-        self.drop.train()
+    def train(self, mode: bool = True):
+        super().train(mode=mode)
+
+        if self.dropout and mode == False:
+            self.drop.train(True)
+
         return self
 
     def forward(self, x):

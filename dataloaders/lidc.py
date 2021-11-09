@@ -83,9 +83,6 @@ class LIDC_SYN(Dataset):
 
 
 class LIDC_IDRI(Dataset):
-    images = []
-    labels = []
-    series_uid = []
     NCHANNEL= 1
     MEAN = 0.22223
     STD = 0.1843
@@ -98,6 +95,10 @@ class LIDC_IDRI(Dataset):
         self.mode = mode
         max_bytes = 2**31 - 1
         data = {}
+        self.images = []
+        self.labels = []
+        self.series_uid = []
+
         for file in os.listdir(dataset_location):
             filename = os.fsdecode(file)
             if '.pickle' in filename:
