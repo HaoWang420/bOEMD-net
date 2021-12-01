@@ -100,9 +100,9 @@ def make_data_loader(args, **kwargs):
     elif args.dataset.name == "processed-lidc":
         nclass = 1
         nchannel = 1
-        train_set = LIDC_IDRI_patient_id( transform = None, mode = 'ged', data_mode = "train")
-        val_set = LIDC_IDRI_patient_id(transform=None, mode = "ged", data_mode = "val")
-        test_set = LIDC_IDRI_patient_id(transform= None, mode = "ged", data_mode = "test")
+        train_set = LIDC_IDRI_patient_id( transform = None, mode = 'qubiq', data_mode = "train")
+        val_set = LIDC_IDRI_patient_id(transform=None, mode = "qubiq", data_mode = "val")
+        test_set = LIDC_IDRI_patient_id(transform= None, mode = "qubiq", data_mode = "test")
         
         train_loader = DataLoader(train_set, batch_size = args.batch_size, num_workers = args.workers, pin_memory = False)
         test_loader = DataLoader(val_set, batch_size = args.batch_size, num_workers = args.workers, pin_memory = False)
