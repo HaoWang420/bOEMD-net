@@ -10,6 +10,7 @@ import numpy as np
 import os
 import random
 import pickle
+from skimage import io
 from torch.utils.data import DataLoader
 from torch.utils.data.sampler import SubsetRandomSampler
 
@@ -81,6 +82,88 @@ class LIDC_SYN(Dataset):
 
         return len(self.data)
 
+class LIDC_IDRI_patient_id(Dataset):
+    NCHANNEL= 1
+    MEAN = 0.22223
+    STD = 0.1843
+
+    def __init__(self, dataset_location=Path.getPath('processed-lidc'), transform=None, mode='ged', data_mode = "train"):
+        """
+        mode = choices(['ged', 'qubiq'])
+        """
+        self.transform = transform
+        self.mode = mode
+        assert data_mode in ["train", "val", "test"]
+        max_bytes = 2**31 - 1
+        data = {}
+        self.images = []
+        self.labels = []
+        self.series_uid = {}
+        self.series_uid_index = {}
+
+        data_set_folder = os.path.join(dataset_location,data_mode)
+        patient_folder = os.path.join(data_set_folder, "images")
+  
+        print(patient_folder)
+        for patient_id in os.listdir(patient_folder):
+            image_folder = os.path.join(patient_folder, patient_id)
+            for image in os.listdir(image_folder):
+                self.images.append(io.imread(os.path.join( image_folder,image)))
+                label_path = image_folder.replace("images", "gt")
+                label_names = [ image.replace(".png", "_l{}.png".format(i)) for i in range(0, 4)]
+                labels = []
+                for l in label_names:
+                    labels.append(io.imread(os.path.join(label_path, l)))
+                self.labels.append(labels)
+
+        assert (len(self.images) == len(self.labels))
+        self.mean_ = self.mean()
+        self.std_ = self.std()
+        # for img in self.images:
+        #     print(np.max(img))
+        #     print(np.min(img))
+        # for label in self.labels:
+        #     assert np.max(label) <= 1 and np.min(label) >= 0
+
+    def __getitem__(self, index):
+
+        image = np.expand_dims(self.images[index], axis=0)
+
+        label = self.labels[index][np.random.randint(4)][None, ...]
+        labels = np.stack(self.labels[index], axis=0)
+
+        # Convert image and label to torch tensors
+        image = (torch.from_numpy(image) - self.mean_) / self.std_
+        label = torch.from_numpy(label)
+        labels = torch.from_numpy(labels)
+
+        #Convert uint8 to float tensors
+        image = image.type(torch.FloatTensor)
+        label = label.type(torch.FloatTensor)
+        labels = labels.type(torch.FloatTensor)
+
+        # Normalise inputs
+        if self.transform:
+            image = self.transform(image)
+            label = self.transform(label)
+
+        if self.mode == 'ged':
+            return {'image': image, 'label': label, 'labels': labels}
+        elif self.mode == 'qubiq':
+            return {'image': image, 'label': labels}
+        else:
+            raise NotImplementedError
+
+    # Override to give PyTorch size of dataset
+    def __len__(self):
+        return len(self.images)
+
+    def mean(self, ):
+        return np.mean(self.images)
+
+    def std(self, ):
+        return np.std(self.images)
+
 
 class LIDC_IDRI(Dataset):
     NCHANNEL= 1
@@ -116,7 +199,7 @@ class LIDC_IDRI(Dataset):
             self.images.append(value['image'].astype(float))
             self.labels.append(value['masks'])
             self.series_uid.append(value['series_uid'])
-
+        print(self.series_uid)
         assert (len(self.images) == len(self.labels) == len(self.series_uid))
 
         for img in self.images:
