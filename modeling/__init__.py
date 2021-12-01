@@ -14,7 +14,7 @@ def build_model(config, nchannels, nclass, model='unet'):
             dropout=config.dropout,
             dropp=config.drop_p
         )
-    elif model == "batten-unet":
+    elif model == "boemd":
         return MDecoderUNet(
             n_channels=nchannels,
             n_classes=nclass,

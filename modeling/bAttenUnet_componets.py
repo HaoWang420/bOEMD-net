@@ -96,12 +96,12 @@ class BBBConv2d(ModuleWrapper):
 
     def forward(self, input, sample=True):
         if self.training or sample:
-            W_eps = torch.empty(self.W_mu.size()).normal_(0, 1).to(self.device)
+            W_eps = torch.empty(self.W_mu.size()).normal_(0, 1).to(input.device)
             self.W_sigma = torch.log1p(torch.exp(self.W_rho))
             self.W = self.W_mu + W_eps * self.W_sigma
 
             if self.use_bias:
-                bias_eps = torch.empty(self.bias_mu.size()).normal_(0, 1).to(self.device)
+                bias_eps = torch.empty(self.bias_mu.size()).normal_(0, 1).to(input.device)
                 self.bias_sigma = torch.log1p(torch.exp(self.bias_rho))
                 self.bias= self.bias_mu + bias_eps * self.bias_sigma
             else:

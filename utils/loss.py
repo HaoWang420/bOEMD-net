@@ -12,6 +12,7 @@ class SegmentationLosses(object):
         self.cuda = cuda
         self.alpha = alpha
         self.nclass = nclass
+        self.args = args
 
     def build_loss(self, mode='ce'):
         if mode == 'ce':
@@ -27,6 +28,7 @@ class SegmentationLosses(object):
         elif mode == 'fb-dice':
             return self.ForeBackGroundDice
         elif mode == "elbo":
+            self.weights = self.args.loss.weights
             return self.ELBO
         else:
             raise NotImplementedError
@@ -49,10 +51,8 @@ class SegmentationLosses(object):
         """
         assert not target.requires_grad
         # maximum likelihood - kl
-        sigmoid = nn.Sigmoid()
-        bce = nn.BCELoss()
 
-        return self.dice_coef(input, target) + beta * kl / train_size
+        return self.weights.dice * self.dice_coef(input, target) + self.weights.kl * beta * kl / train_size
 
 
     def CrossEntropyLoss(self, logit, target):

@@ -1,3 +1,4 @@
 name: "lidc"
-val_ratio: 0.2
-test_ratio: 0.2
+train_ratio: 0.8
+val_ratio: 0.1
+test_ratio: 0.1
