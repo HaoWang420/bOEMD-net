@@ -9,7 +9,7 @@ class Path(object):
             return '/home/cvip/data/wanghao/datasets/braTS_jpg'
         if dataset == 'lidc':
             return '/data/ssd/wanghao/datasets/'
-        if dataset == 'processed-lidc':
+        if dataset == 'lidc-patient':
             return "/data/ssd/datasets/processed_LIDC/"
         else:
             raise NotImplementedError
