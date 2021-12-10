@@ -3,6 +3,7 @@ python train.py \
     epochs=250 \
     model=boemd \
     model.num_sample=50 \
+    model.attention="attn" \
     eval_interval=5 \
     gpu_ids="'0'" \
     loss=elbo \

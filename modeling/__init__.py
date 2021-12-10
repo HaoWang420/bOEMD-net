@@ -19,7 +19,7 @@ def build_model(config, nchannels, nclass, model='unet'):
             n_channels=nchannels,
             n_classes=nclass,
             bilinear=True,
-            attention="attn"
+            attention=config.attention
         )
     elif model == 'prob-unet':
         return ProbUNet(
