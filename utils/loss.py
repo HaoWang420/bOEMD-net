@@ -51,8 +51,9 @@ class SegmentationLosses(object):
         # maximum likelihood - kl
         sigmoid = nn.Sigmoid()
         bce = nn.BCELoss()
-
-        return self.dice_coef(input, target) + beta * kl / train_size
+        dice = self.dice_coef(input, target)
+        # print(dice)
+        return dice + beta * kl / train_size
 
 
     def CrossEntropyLoss(self, logit, target):
