@@ -10,7 +10,8 @@ import numpy as np
 import os
 import random
 import pickle
-from skimage import io
+import matplotlib
+import matplotlib.image as image
 from torch.utils.data import DataLoader
 from torch.utils.data.sampler import SubsetRandomSampler
 
@@ -87,7 +88,7 @@ class LIDC_IDRI_patient_id(Dataset):
     MEAN = 0.22223
     STD = 0.1843
 
-    def __init__(self, dataset_location=Path.getPath('processed-lidc'), transform=None, mode='ged', data_mode = "train"):
+    def __init__(self, dataset_location=Path.getPath('lidc-patient'), transform=None, mode='ged', data_mode = "train"):
         """
         mode = choices(['ged', 'qubiq'])
         """
@@ -108,12 +109,12 @@ class LIDC_IDRI_patient_id(Dataset):
         for patient_id in os.listdir(patient_folder):
             image_folder = os.path.join(patient_folder, patient_id)
             for image in os.listdir(image_folder):
-                self.images.append(io.imread(os.path.join( image_folder,image)))
+                self.images.append(matplotlib.image.imread(os.path.join( image_folder,image))[26:-26, 26:-26])
                 label_path = image_folder.replace("images", "gt")
                 label_names = [ image.replace(".png", "_l{}.png".format(i)) for i in range(0, 4)]
                 labels = []
                 for l in label_names:
-                    labels.append(io.imread(os.path.join(label_path, l)))
+                    labels.append(matplotlib.image.imread(os.path.join(label_path, l))[26:-26, 26:-26])
                 self.labels.append(labels)
 
         assert (len(self.images) == len(self.labels))
@@ -123,7 +124,12 @@ class LIDC_IDRI_patient_id(Dataset):
         #     print(np.max(img))
         #     print(np.min(img))
         # for label in self.labels:
-        #     assert np.max(label) <= 1 and np.min(label) >= 0
+        #     print(np.max(label))
+        #     print(np.min(label))
+        for img in self.images:
+            assert np.max(img) <=1 and np.min(img) >= 0
+        for label in self.labels:
+            assert np.max(label) <= 1 and np.min(label) >= 0
 
     def __getitem__(self, index):
 
@@ -133,7 +139,7 @@ class LIDC_IDRI_patient_id(Dataset):
         labels = np.stack(self.labels[index], axis=0)
 
         # Convert image and label to torch tensors
-        image = (torch.from_numpy(image) - self.mean_) / self.std_
+        image = (torch.from_numpy(image) ) 
         label = torch.from_numpy(label)
         labels = torch.from_numpy(labels)
 

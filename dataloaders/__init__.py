@@ -97,16 +97,28 @@ def make_data_loader(args, **kwargs):
         train_indices, test_indices, val_indices = indices[8*split:], indices[1*split:2*split], indices[:split]
         
     # randomly samples a label during trainning
-    elif args.dataset.name == "processed-lidc":
+    elif args.dataset.name == "lidc-patient":
         nclass = 1
         nchannel = 1
         train_set = LIDC_IDRI_patient_id( transform = None, mode = 'qubiq', data_mode = "train")
         val_set = LIDC_IDRI_patient_id(transform=None, mode = "qubiq", data_mode = "val")
         test_set = LIDC_IDRI_patient_id(transform= None, mode = "qubiq", data_mode = "test")
         
-        train_loader = DataLoader(train_set, batch_size = args.batch_size, num_workers = args.workers, pin_memory = False)
-        test_loader = DataLoader(val_set, batch_size = args.batch_size, num_workers = args.workers, pin_memory = False)
-        validation_loader = DataLoader(val_set, batch_size = args.batch_size, num_workers = args.workers, pin_memory = False)
+        train_indices = list(range(len(train_set)))
+        val_indices = list(range(len(val_set)))
+        test_indices = list(range(len(test_set)))
+        np.random.shuffle(train_indices)
+        np.random.shuffle(val_indices)
+        np.random.shuffle(test_indices)
+
+        train_sampler = SubsetRandomSampler(train_indices[:int(args.dataset.data_ratio * len(train_indices))])
+        val_sampler = SubsetRandomSampler(val_indices[:int(args.dataset.data_ratio * len(val_indices))])
+        test_sampler = SubsetRandomSampler(test_indices[:int(args.dataset.data_ratio * len(test_indices))])
+        
+        
+        train_loader = DataLoader(train_set, batch_size = args.batch_size, sampler = train_sampler, num_workers = args.workers, pin_memory = False)
+        validation_loader = DataLoader(val_set, batch_size = 1, sampler = val_sampler,num_workers = args.workers, pin_memory = False)
+        test_loader = DataLoader(test_set, batch_size = 1, sampler = test_sampler, num_workers = args.workers, pin_memory = False)
         
         return train_loader, validation_loader, test_loader, nclass, nchannel, len(train_set)
 
