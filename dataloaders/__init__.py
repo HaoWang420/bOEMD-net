@@ -75,8 +75,6 @@ def make_data_loader(args, **kwargs):
         
         train_indices, test_indices, val_indices = indices[2*split:], indices[1*split:2*split], indices[:split]
         
-        
-    
 
     elif args.dataset.name == 'lidc-syn':
         nclass = 3
