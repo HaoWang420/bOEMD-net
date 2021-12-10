@@ -7,6 +7,7 @@ from trainer import build_trainer
 
 @hydra.main(config_path="config", config_name="config")
 def main(args: DictConfig):
+    print(OmegaConf.to_yaml(args))
     if args.cuda:
         try:
             args.gpu_ids = [int(s) for s in args.gpu_ids.split(',')]
