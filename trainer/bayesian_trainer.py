@@ -42,7 +42,7 @@ class BayesianTrainer(Trainer):
     
     def forward_iter(self, image, target, epoch, step):
         kl = 0.
-        beta = metrics.get_beta(step, len(self.train_loader), self.beta_type, epoch, self.num_epoch)
+        beta = metrics.get_beta(step, len(self.train_loader), self.args.loss.beta_type, epoch, self.args.epochs)
 
         output, kl = self.model(image)
         # print("check for kl", output, kl)
@@ -63,25 +63,24 @@ class BayesianTrainer(Trainer):
                 image, target = sample['image'], sample['label']
             n, c, w, h = target.shape
             if self.args.cuda:
-                image, target = image.cuda(), target.cuda()
-            kl_losses = torch.zeros((self.num_sample, n))
+                image= image.cuda()
 
             assert image.shape[0] == 1
             if self.args.dataset == 'lidc-syn-rand':
-                image = image.repeat(self.num_sample * 3, 1, 1, 1)
+                image = image.repeat(self.args.model.num_sample * 3, 1, 1, 1)
             else:
-                image = image.repeat(self.num_sample, 1, 1, 1)
+                image = image.repeat(self.args.model.num_sample, 1, 1, 1)
 
             with torch.no_grad():
-                predictions, kl = self.model(image)
+                predictions= self.model(image)
 
             if self.args.dataset == 'lidc-syn-rand':
                 predictions = predictions.reshape((self.num_sample, 3, predictions.shape[2], predictions.shape[3]))
 
-            mean_out = torch.mean(predictions, dim=0, keepdim=True)
-            mean_kl_loss = torch.mean(kl_losses)
-
-            self.evaluator.add_batch(target, pred)
+            mean_out = torch.mean(predictions, dim=0, keepdim=True).cpu().numpy()
+            target = target.data.cpu().numpy()
+            # print("target shape", target.shape)
+            self.evaluator.add_batch(target, mean_out)
 
         results = self.evaluator.compute()
 
