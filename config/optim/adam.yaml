@@ -1,1 +1,3 @@
-wshnbleight_decay: 0
+name: "adam"
+lr: 1.e-2
+weight_decay: 0
