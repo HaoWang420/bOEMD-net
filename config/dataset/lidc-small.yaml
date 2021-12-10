@@ -1,0 +1,4 @@
+name: "lidc-small"
+val_ratio: 0.2
+test_ratio: 0.2
+small_ratio: 0.2
