@@ -103,7 +103,7 @@ def make_data_loader(args, **kwargs):
         
     # randomly samples a label during trainning
     elif args.dataset.name == "lidc-patient":
-        nclass = 1
+        nclass = 4
         nchannel = 1
         train_set = LIDC_IDRI_patient_id( transform = None, mode = 'qubiq', data_mode = "train")
         val_set = LIDC_IDRI_patient_id(transform=None, mode = "qubiq", data_mode = "val")
