@@ -45,10 +45,10 @@ class BayesianTrainer(Trainer):
         beta = metrics.get_beta(step, len(self.train_loader), self.args.loss.beta_type, epoch, self.args.epochs)
 
         output, kl = self.model(image)
-        # print("check for kl", output, kl)
+
         loss = self.criterion(output, target, kl, beta, self.train_length)
         
-        return output, kl, loss
+        return output, kl.mean(), loss.mean()
     
 
     # multi-sample evaluation

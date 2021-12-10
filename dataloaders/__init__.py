@@ -10,6 +10,7 @@ import numpy as np
 import os
 import random
 import pickle
+import math
 
 def make_data_loader(args, **kwargs):
 
@@ -52,10 +53,14 @@ def make_data_loader(args, **kwargs):
 
         dataset_size = len(dataset)
         indices = list(range(dataset_size))
-        split = int(np.floor(0.1 * dataset_size))
         np.random.shuffle(indices)
+        train_size = math.ceil(args.dataset.train_ratio * len(indices))
+        val_size = math.floor(args.dataset.val_ratio * len(indices))
+        test_size = math.floor(args.dataset.test_ratio * len(indices))
 
-        train_indices, test_indices, val_indices = indices[2*split:], indices[1*split:2*split], indices[:split]
+        train_indices = indices[(val_size + test_size):(val_size + test_size + train_size)]
+        test_indices = indices[(val_size):(val_size + test_size)]
+        val_indices = indices[:val_size]
     
     elif args.dataset.name == "lidc-small":
         nclass = 4
@@ -71,6 +76,8 @@ def make_data_loader(args, **kwargs):
         train_indices, test_indices, val_indices = indices[2*split:], indices[1*split:2*split], indices[:split]
         
         
+    
+
     elif args.dataset.name == 'lidc-syn':
         nclass = 3
         nchannel = 1
@@ -139,11 +146,9 @@ def make_data_loader(args, **kwargs):
     else:
         raise NotImplementedError
 
-    print(dataset_size)
     train_sampler = SubsetRandomSampler(train_indices)
     test_sampler = SubsetRandomSampler(test_indices)
     val_sampler = SubsetRandomSampler(val_indices)
-    # print(val_indices)
     train_loader = DataLoader(dataset, batch_size=args.batch_size, sampler=train_sampler, num_workers=args.workers, pin_memory=False)
     test_loader = DataLoader(dataset, batch_size=args.test_batch_size, sampler=test_sampler, num_workers=args.workers, pin_memory=False)
     validation_loader = DataLoader(dataset, batch_size=args.test_batch_size, sampler=val_sampler, num_workers=args.workers, pin_memory=False)

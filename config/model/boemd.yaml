@@ -1,2 +1,3 @@
 name: "boemd"
-num_sample: 32
+attention: "attn"
+num_samples: 50

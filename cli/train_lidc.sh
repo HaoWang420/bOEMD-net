@@ -1,16 +1,16 @@
 python train.py \
-       --workers 4 \
-       --lr 5 \
-       --epochs 200 \
-       --gpu-ids 0 \
-       --batch-size 32 \
-       --test-batch-size 1 \
-       --checkname unet-lidc \
-       --eval-interval 1 \
-       --dataset lidc \
-       --loss-type dice \
-       --nchannels 1 \
-       --model unet \
-       --nclass 4 \
-       --task-num 0 \
-       --save-path /data/ssd/qingqiao/BOEMD_run_test
+    -m \
+    mode=train \
+    epochs=300 \
+    model=boemd \
+    gpu_ids="'0,1'" \
+    loss=elbo \
+    loss.weights.kl=0.001 \
+    batch_size=64 \
+    test_batch_size=64 \
+    dataset=lidc \
+    dataset.train_ratio=0.1 \
+    checkname=boemd-0.1-train \
+    save_path=/data/ssd/wanghao/bOEMD_results/ \
+    optim=adam \
+    optim.lr=1e-2
