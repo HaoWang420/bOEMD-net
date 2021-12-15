@@ -97,3 +97,4 @@ class BayesianTrainer(Trainer):
             'optimizer': self.optimizer.state_dict(),
             'best_pred': self.best_pred,
         }, is_best)
+

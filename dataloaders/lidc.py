@@ -205,7 +205,6 @@ class LIDC_IDRI(Dataset):
             self.images.append(value['image'].astype(float))
             self.labels.append(value['masks'])
             self.series_uid.append(value['series_uid'])
-        print(self.series_uid)
         assert (len(self.images) == len(self.labels) == len(self.series_uid))
 
         for img in self.images:
