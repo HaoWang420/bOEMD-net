@@ -3,6 +3,8 @@ import torch
 from modeling.unet import *
 from modeling.bAttenUnet import MDecoderUNet, MMultiBAUNet, MMultiBUNet, ODecoderUNet, ODecoderUNetWrapper
 from modeling.variantional_unet import VUNet
+from modeling.phiseg.phiseg import PHISeg
+from modeling.phiseg.probabilistic_unet import ProbabilisticUnet
 
 
 def build_model(config, nchannels, nclass, model='unet'):
@@ -20,14 +22,6 @@ def build_model(config, nchannels, nclass, model='unet'):
             n_classes=nclass,
             bilinear=True,
             attention=config.attention
-        )
-    elif model == 'prob-unet':
-        return ProbUNet(
-            n_channels=nchannels,
-            n_classes=nclass,
-            bilinear=True,
-            dropout=config.dropout,
-            dropp=config.drop_p
         )
     elif model == 'multi-unet':
         return MultiUNet(
@@ -82,46 +76,21 @@ def build_model(config, nchannels, nclass, model='unet'):
             n_channels=nchannels,
             n_classes=nclass
         )
+    elif model == 'phiseg':
+        return PHISeg(
+            input_channels=nchannels,
+            num_classes=2,
+            num_filters=config.nfilters,
+            image_size=config.img_size,
+        )
+    elif model == 'prob-unet':
+        return ProbabilisticUnet(
+            input_channels=nchannels,
+            num_classes=2,
+            num_filters=config.nfilters,
+            image_size=config.img_size
+        )
+
     else:
         raise NotImplementedError
 
-
-def build_transfer_learning_model(args, nchannels, nclass, pretrained, model='unet'):
-    """
-
-    param args:
-    param nclass: number of classes
-    param pretrained: path to the pretrained model parameters
-    """
-    # hard coded class number for pretained UNet on BraTS
-    pre_model = UNet(
-        n_channels=args.model.nchannels,
-        n_classes=3,
-        bilinear=True,
-        dropout=args.dropout,
-        dropp=args.drop_p
-    )
-    if not os.path.isfile(pretrained):
-        raise RuntimeError("no checkpoint found at {}".format(pretrained))
-    params = torch.load(pretrained)
-    pre_model.load_state_dict(params['state_dict'])
-    m = UNet(
-        n_channels=args.model.nchannels,
-        n_classes=nclass,
-        bilinear=pre_model.bilinear,
-        dropout=args.dropout,
-        dropp=args.drop_p
-    )
-
-    assert args.model.nchannels == pre_model.n_channels
-    m.inc = pre_model.inc
-    m.down1 = pre_model.down1
-    m.down2 = pre_model.down2
-    m.down3 = pre_model.down3
-    m.down4 = pre_model.down4
-    m.up1 = pre_model.up1
-    m.up2 = pre_model.up2
-    m.up3 = pre_model.up3
-    m.up4 = pre_model.up4
-
-    return m

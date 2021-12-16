@@ -1,6 +1,6 @@
 from trainer.trainer import *
 
-class BayesianTrainer(Trainer):
+class PhiSegTrainer(Trainer):
 
     def training(self, epoch):
         train_loss = 0.0
@@ -41,12 +41,8 @@ class BayesianTrainer(Trainer):
         print("KL: %.4f" % (kl_loss))
     
     def forward_iter(self, image, target, epoch, step):
-        kl = 0.
-        beta = metrics.get_beta(step, len(self.train_loader), self.args.loss.beta_type, epoch, self.args.epochs)
-
-        output, kl = self.model(image)
-
-        loss = self.criterion(output, target, kl, beta, self.train_length)
+        output, loss, kl = self.model.forward(image, target)
+        output = self.model.module.accumulate_output(output)
         
         return output, kl.mean(), loss.mean()
     
@@ -57,29 +53,19 @@ class BayesianTrainer(Trainer):
         self.evaluator.reset()
         tbar = tqdm(self.val_loader, desc='\r')
         for i, sample in enumerate(tbar):
-            if self.args.dataset == 'lidc-syn-rand':
-                image, target = sample['image'], sample['labels']
-            else:
-                image, target = sample['image'], sample['label']
-            n, c, w, h = target.shape
-            if self.args.cuda:
-                image= image.cuda()
+            image, target = sample['image'], sample['labels']
 
-            if self.args.dataset == 'lidc-syn-rand':
-                image = image.repeat(self.args.model.num_sample * 3, 1, 1, 1)
-            else:
-                image = image.repeat(self.args.model.num_sample, 1, 1, 1)
+            if self.args.cuda:
+                image = image.cuda()
+                target = target.cuda()
 
             with torch.no_grad():
-                predictions= self.model(image)
+                pred = self.predict_iter(image, target)
 
-            if self.args.dataset == 'lidc-syn-rand':
-                predictions = predictions.reshape((self.num_sample, 3, predictions.shape[2], predictions.shape[3]))
-
-            mean_out = torch.mean(predictions, dim=0, keepdim=True).cpu().numpy()
             target = target.data.cpu().numpy()
-            # print("target shape", target.shape)
-            self.evaluator.add_batch(target, mean_out)
+            pred = pred.data.cpu().numpy()
+
+            self.evaluator.add_batch(target, pred)
 
         results = self.evaluator.compute()
 
@@ -98,3 +84,19 @@ class BayesianTrainer(Trainer):
             'best_pred': self.best_pred,
         }, is_best)
 
+
+    def predict_iter(self, image, target=None):
+        n, c, w, h = image.shape
+        nsamples = self.args.model.num_samples
+        # N num_samples 1 H W
+        image = image[:, None, ...].repeat(1, nsamples, 1, 1, 1)
+        image = image.reshape([-1, c, h, w])
+
+        pred_list = self.model.forward(image, None)
+        pred = self.model.module.accumulate_output(pred_list)
+
+        # N*num_sampels H W
+        pred = torch.argmax(pred, dim=1)
+        pred = pred.reshape([n, nsamples, h, w])
+
+        return pred

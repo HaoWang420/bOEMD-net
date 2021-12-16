@@ -1,15 +1,13 @@
 import torch
 import torch.nn as nn
 import numpy as np
-import utils
 import revtorch as rv
 
 import logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s %(message)s')
 
-# TODO: only debugging
-from utils import show_tensor
 from modeling.phiseg.torchlayers import Conv2D, Conv2DSequence, ReversibleSequence
+from modeling.phiseg import utils
 
 class DownConvolutionalBlock(nn.Module):
     def __init__(self, input_dim, output_dim, initializers, depth=3, padding=True, pool=True, reversible=False):
@@ -134,6 +132,7 @@ class Posterior(nn.Module):
 
         self.padding = padding
         self.activation_maps = []
+        self.is_posterior = is_posterior
 
         if is_posterior:
             # increase input channel by two to accomodate place for mask in one hot encoding
@@ -173,7 +172,7 @@ class Posterior(nn.Module):
                 self.sample_z_path.append(SampleZBlock(input, depth=2, reversible=reversible))
 
     def forward(self, patch, segm=None, training_prior=False, z_list=None):
-        if segm is not None:
+        if self.is_posterior:
 
             with torch.no_grad():
                 segm_one_hot = utils.convert_batch_to_onehot(segm, nlabels=2)\
@@ -412,14 +411,17 @@ class PHISeg(nn.Module):
         return self.accumulate_output(layer_recon, use_softmax=use_softmax), layer_recon
 
     def forward(self, patch, mask, training=True):
-        if training:
-            self.posterior_latent_space, self.posterior_mu, self.posterior_sigma = self.posterior(patch, mask)
+        if self.training:
+            assert mask is not None
+            self.posterior_latent_space, self.posterior_mu, self.posterior_sigma = self.posterior.forward(patch, segm=mask)
             self.prior_latent_space, self.prior_mu, self.prior_sigma = self.prior(patch,
                                                                                   training_prior=True,
                                                                                   z_list=self.posterior_latent_space)
             self.s_out_list = self.likelihood(self.posterior_latent_space)
+            loss = self.loss(mask)
+
+            return self.s_out_list, loss, self.kl_divergence_loss
         else:
-            self.posterior_latent_space, self.posterior_mu, self.posterior_sigma = self.posterior(patch, mask)
             self.prior_latent_space, self.prior_mu, self.prior_sigma = self.prior(patch, training_prior=False)
             self.s_out_list = self.likelihood(self.prior_latent_space)
 
@@ -521,7 +523,6 @@ class PHISeg(nn.Module):
         Calculate the evidence lower bound of the log-likelihood of P(Y|X)
         """
         self.loss_tot = 0
-        z_posterior = self.posterior_latent_space
 
         self.kl_divergence_loss = self.kl_divergence()
 

@@ -105,9 +105,9 @@ def make_data_loader(args, **kwargs):
     elif args.dataset.name == "lidc-patient":
         nclass = 4
         nchannel = 1
-        train_set = LIDC_IDRI_patient_id( transform = None, mode = 'qubiq', data_mode = "train")
-        val_set = LIDC_IDRI_patient_id(transform=None, mode = "qubiq", data_mode = "val")
-        test_set = LIDC_IDRI_patient_id(transform= None, mode = "qubiq", data_mode = "test")
+        train_set = LIDC_IDRI_patient_id( transform = None, mode = args.dataset.mode, data_mode = "train")
+        val_set = LIDC_IDRI_patient_id(transform=None, mode = args.dataset.mode, data_mode = "val")
+        test_set = LIDC_IDRI_patient_id(transform= None, mode = args.dataset.mode, data_mode = "test")
         
         train_indices = list(range(len(train_set)))
         val_indices = list(range(len(val_set)))
@@ -122,8 +122,8 @@ def make_data_loader(args, **kwargs):
         
         
         train_loader = DataLoader(train_set, batch_size = args.batch_size, sampler = train_sampler, num_workers = args.workers, pin_memory = False)
-        validation_loader = DataLoader(val_set, batch_size = 1, sampler = val_sampler,num_workers = args.workers, pin_memory = False)
-        test_loader = DataLoader(test_set, batch_size = 1, sampler = test_sampler, num_workers = args.workers, pin_memory = False)
+        validation_loader = DataLoader(val_set, batch_size = args.test_batch_size, sampler = val_sampler,num_workers = args.workers, pin_memory = False)
+        test_loader = DataLoader(test_set, batch_size = args.test_batch_size, sampler = test_sampler, num_workers = args.workers, pin_memory = False)
         
         return train_loader, validation_loader, test_loader, nclass, nchannel, len(train_set)
 

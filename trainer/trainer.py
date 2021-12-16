@@ -1,23 +1,15 @@
-import argparse
 import os
 from pickle import NONE
-import numpy as np
 from tqdm import tqdm
 import torch
-import math
 
-from mypath import Path
+from modeling import build_model
 from dataloaders import make_data_loader
-from modeling import build_model, build_transfer_learning_model
 from utils.loss import SegmentationLosses
 from utils.lr_scheduler import LR_Scheduler
 from utils.metrics import Evaluator
 from utils.summaries import TensorboardSummary
 from utils.saver import Saver
-from utils import metrics
-from torch.nn import functional as F
-import matplotlib.pyplot as plt
-import seaborn as sns
 
 class Trainer(object):
     # Define Saver
@@ -55,12 +47,19 @@ class Trainer(object):
             self.optimizer = torch.optim.SGD(train_params, weight_decay=args.optim.weight_decay)
 
         # Define Criterion
-        self.criterion = SegmentationLosses(args, nclass=self.nclass, weight=None, cuda=args.cuda).build_loss(
-            mode=args.loss.name)
+        self.criterion = SegmentationLosses(
+                                args, 
+                                nclass=self.nclass, 
+                                weight=None, 
+                                cuda=args.cuda).build_loss(mode=args.loss.name)
 
 
         # Define Evaluator
-        self.evaluator = Evaluator(self.nclass, loss=args.loss.name, metrics=args.metrics)
+        self.evaluator = Evaluator(
+                            self.nclass, 
+                            loss=args.loss.name, 
+                            metrics=args.metrics, 
+                            apply_sigmoid=args.apply_sigmoid)
 
         # Define lr scheduler
         self.scheduler = LR_Scheduler(args.lr_scheduler, args.optim.lr,

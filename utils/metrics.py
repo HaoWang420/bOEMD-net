@@ -66,10 +66,15 @@ def dice_coef(preds, targets, nclass):
     return torch.mean(loss)
 
 class Evaluator(object):
-    def __init__(self, num_class, dice=False, model='unet', loss='dice', metrics=['qubiq', 'ged', 'sd', 'sa']):
+    def __init__(self, num_class, dice=False, model='unet', loss='dice', metrics=['qubiq', 'ged', 'sd', 'sa'], apply_sigmoid=True):
+        """Evaluating with various metrics,
+
+        apply_sigmoid: whether or not apply sigmoid before computing metrics requires input to be in the range of [0, 1]
+        """
         self.model = model
         self.dice=dice
         self.loss = loss
+        self.apply_sigmoid = apply_sigmoid
         self.metrics = metrics
         self.results = {}
 
@@ -80,9 +85,13 @@ class Evaluator(object):
 
     def __sigmoid(self, x):
         # prevent numerical overflow
-        x = np.clip(x, -88.72, 88.72)
 
-        return 1 / (1 + np.exp(-x))
+        if self.apply_sigmoid:
+            x = np.clip(x, -88.72, 88.72)
+
+            return 1 / (1 + np.exp(-x))
+        else:
+            return x
 
     def _dice_coef(self, gt_image, pre_image, eps=1.0):
         n, c, w, h = pre_image.shape

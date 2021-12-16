@@ -25,5 +25,6 @@ metrics:
   - "ged"
   - "sa"
   - "sd"
+apply_sigmoid: True
 workers: 4
 pin_memory: False

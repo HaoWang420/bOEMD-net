@@ -1,2 +1,3 @@
 name: "lidc-patient"
 data_ratio: 1
+mode: "qubiq"
