@@ -64,7 +64,8 @@ class BayesianTrainer(Trainer):
             n, c, w, h = target.shape
             if self.args.cuda:
                 image= image.cuda()
-
+            # Keep the image shape as one
+            assert image.shape[0] == 1
             if self.args.dataset == 'lidc-syn-rand':
                 image = image.repeat(self.args.model.num_sample * 3, 1, 1, 1)
             else:
