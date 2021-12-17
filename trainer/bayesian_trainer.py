@@ -44,7 +44,7 @@ class BayesianTrainer(Trainer):
     def forward_iter(self, image, target, epoch, step):
         kl = 0.
         beta = metrics.get_beta(step, len(self.train_loader), self.args.loss.beta_type, epoch, self.args.epochs)
-
+        # print("beta, ", beta)
         output, kl = self.model(image)
 
         loss = self.criterion(output, target, kl, beta, self.train_length)

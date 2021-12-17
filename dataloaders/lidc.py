@@ -118,15 +118,12 @@ class LIDC_IDRI_patient_id(Dataset):
                 self.labels.append(labels)
 
         assert (len(self.images) == len(self.labels))
-        # self.mean_ = self.mean()
-        # self.std_ = self.std()
-        # for img in self.images:
-        #     print(np.max(img))
-        #     print(np.min(img))
-        # for label in self.labels:
-        #     print(np.max(label))
-        #     print(np.min(label))
-
+        ## assert loading is right
+        for img in self.images:
+                assert np.max(img) <= 1 and np.min(img) >= 0
+        for label in self.labels:
+            assert np.max(label) <= 1 and np.min(label) >= 0
+        
     def __getitem__(self, index):
 
         image = np.expand_dims(self.images[index], axis=0)
