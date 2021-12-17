@@ -1,4 +1,5 @@
 from trainer.trainer import *
+from utils import metrics
 
 class BayesianTrainer(Trainer):
 
@@ -49,51 +50,17 @@ class BayesianTrainer(Trainer):
         loss = self.criterion(output, target, kl, beta, self.train_length)
         
         return output, kl.mean(), loss.mean()
-    
 
-    # multi-sample evaluation
-    def val(self, epoch):
-        self.model.eval()
-        self.evaluator.reset()
-        tbar = tqdm(self.val_loader, desc='\r')
-        for i, sample in enumerate(tbar):
-            if self.args.dataset == 'lidc-syn-rand':
-                image, target = sample['image'], sample['labels']
-            else:
-                image, target = sample['image'], sample['label']
-            n, c, w, h = target.shape
-            if self.args.cuda:
-                image= image.cuda()
+    def predict_iter(self, image, target):
+        n, c, w, h = image.shape
+        nsamples = self.args.model.num_samples
 
-            if self.args.dataset == 'lidc-syn-rand':
-                image = image.repeat(self.args.model.num_sample * 3, 1, 1, 1)
-            else:
-                image = image.repeat(self.args.model.num_sample, 1, 1, 1)
+        image = image[:, None, ...].repeat(1, nsamples, 1, 1, 1)
+        image = image.reshape([-1, c, h, w])
 
-            with torch.no_grad():
-                predictions= self.model(image)
+        pred = self.model(image)
 
-            if self.args.dataset == 'lidc-syn-rand':
-                predictions = predictions.reshape((self.num_sample, 3, predictions.shape[2], predictions.shape[3]))
+        pred = pred.reshape([n, nsamples, -1, h, w])
+        pred = torch.mean(pred, dim=1)
 
-            mean_out = torch.mean(predictions, dim=0, keepdim=True).cpu().numpy()
-            target = target.data.cpu().numpy()
-            # print("target shape", target.shape)
-            self.evaluator.add_batch(target, mean_out)
-
-        results = self.evaluator.compute()
-
-        for metric in results:
-            self.writer.add_scalar(metric, results[metric], epoch)
-
-        for metric in results:
-            print(f"{metric} {results[metric]}")
-
-        is_best = True
-        self.best_pred = results['qubiq']
-        self.saver.save_checkpoint({
-            'epoch': epoch + 1,
-            'state_dict': self.model.module.state_dict(),
-            'optimizer': self.optimizer.state_dict(),
-            'best_pred': self.best_pred,
-        }, is_best)
+        return pred

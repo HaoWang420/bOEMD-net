@@ -139,7 +139,7 @@ class Trainer(object):
             if self.args.cuda:
                 image, target = image.cuda(), target.cuda()
             with torch.no_grad():
-                output = self.model(image)
+                output = self.predict_iter(image, target)
 
             tbar.set_description(f'Val/Epoch {epoch}')
             
@@ -164,3 +164,6 @@ class Trainer(object):
             'optimizer': self.optimizer.state_dict(),
             'best_pred': self.best_pred,
         }, is_best)
+
+    def predict_iter(self, image, target):
+        return self.model(image)

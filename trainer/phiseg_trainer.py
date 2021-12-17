@@ -95,7 +95,7 @@ class PhiSegTrainer(Trainer):
         pred_list = self.model.forward(image, None)
         pred = self.model.module.accumulate_output(pred_list)
 
-        # N*num_sampels H W
+        # N*num_sampels nclass H W
         pred = torch.argmax(pred, dim=1)
         pred = pred.reshape([n, nsamples, h, w])
 
