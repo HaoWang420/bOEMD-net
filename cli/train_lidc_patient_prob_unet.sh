@@ -13,5 +13,5 @@ python train.py \
     save_path=/data/ssd/${USER}/bOEMD_results/ \
     apply_sigmoid="False" \
     optim=adam \
-    optim.lr=1e-3 \
+    optim.lr=1e-4 \
     optim.weight_decay=1e-5

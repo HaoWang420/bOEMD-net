@@ -11,8 +11,8 @@ python train.py \
     batch_size=32 \
     test_batch_size=16 \
     dataset=lidc-patient \
-    checkname=boemd_lidc_patient_double_check \
-    save_path=/data/ssd/qingqiao/BOEMD_run_test \
+    checkname=boemd_lidc_patient \
+    save_path=/data/ssd/${USER}/BOEMD_run_test \
     optim=adam \
     seed=2021 \
     optim.lr=5e-3 \

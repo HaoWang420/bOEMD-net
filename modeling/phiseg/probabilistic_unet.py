@@ -253,20 +253,19 @@ class ProbabilisticUnet(nn.Module):
             self.posterior_latent_space = self.posterior.forward(patch, segm)
         self.prior_latent_space = self.prior.forward(patch)
         self.unet_features = self.unet.forward(patch, False)
-        out = self.last_conv(self.unet_features)
 
         if self.training:
             loss = self.loss(segm)
 
-            return out, loss, self.kl_divergence_loss
-        return out
+            return self.reconstruction, loss, self.kl_divergence_loss
+        return self.sample()
 
-    def sample(self, testing=False):
+    def sample(self):
         """
         Sample a segmentation by reconstructing from a prior sample
         and combining this with UNet features
         """
-        if testing == False:
+        if self.training:
             z_prior = self.prior_latent_space.rsample()
             self.z_prior_sample = z_prior
         else:
@@ -356,12 +355,16 @@ class ProbabilisticUnet(nn.Module):
 
         z_posterior = self.posterior_latent_space.rsample()
 
-        self.kl_divergence_loss = torch.mean(
-            self.kl_divergence(analytic=analytic_kl, calculate_posterior=False, z_posterior=z_posterior))
+        self.kl_divergence_loss = torch.mean(self.kl_divergence(
+                                                    analytic=analytic_kl, 
+                                                    calculate_posterior=False, 
+                                                    z_posterior=z_posterior))
 
         # Here we use the posterior sample sampled above
-        self.reconstruction = self.reconstruct(use_posterior_mean=reconstruct_posterior_mean, calculate_posterior=False,
-                                               z_posterior=z_posterior)
+        self.reconstruction = self.reconstruct(
+                                    use_posterior_mean=reconstruct_posterior_mean, 
+                                    calculate_posterior=False,
+                                    z_posterior=z_posterior)
 
         reconstruction_loss = criterion(reconstruction=self.reconstruction, target=segm)
         self.reconstruction_loss = torch.sum(reconstruction_loss)
