@@ -1,18 +1,18 @@
 python train.py \
     mode=train \
-    epochs=250 \
+    epochs=200 \
     model=boemd \
     model.num_samples=16 \
     model.attention="attn" \
-    eval_interval=5 \
-    gpu_ids="'0'" \
+    eval_interval=1 \
+    gpu_ids="'0,1'" \
     loss=elbo \
     loss.beta_type=0.001 \
     batch_size=32 \
-    test_batch_size=1 \
+    test_batch_size=16 \
     dataset=lidc-patient \
     checkname=boemd_lidc_patient \
     save_path=/data/ssd/${USER}/BOEMD_run_test \
     optim=adam \
-    seed=42 \
-    optim.lr=1e-3 \
+    seed=2021 \
+    optim.lr=5e-3 \
