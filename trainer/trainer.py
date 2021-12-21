@@ -128,10 +128,13 @@ class Trainer(object):
         print('[Epoch: %d, numImages: %5d]' % (epoch, i * self.args.batch_size + image.data.shape[0]))
         print('Loss: %.3f' % (train_loss))
 
-    def val(self, epoch):
+    def val(self, epoch, test=False):
         self.model.eval()
         self.evaluator.reset()
-        tbar = tqdm(self.val_loader, desc='\r')
+        if test:
+            tbar = tqdm(self.test_loader, desc='\r')
+        else:
+            tbar = tqdm(self.val_loader, desc='\r')
 
         for i, sample in enumerate(tbar):
             image, target = sample['image'], sample['label']

@@ -24,6 +24,8 @@ def main(args: DictConfig):
         train(args, trainer)
     elif args.mode == 'eval':
         evaluate(trainer)
+    elif args.mode == 'test':
+        test(trainer)
 
     trainer.writer.close()
 
@@ -38,6 +40,9 @@ def train(args, trainer):
 
 def evaluate(trainer):
     trainer.val(0)
+
+def test(trainer):
+    trainer.val(0, test=True)
 
 if __name__ == "__main__":
     main()

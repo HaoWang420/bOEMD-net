@@ -48,10 +48,15 @@ class PhiSegTrainer(Trainer):
     
 
     # multi-sample evaluation
-    def val(self, epoch):
+    def val(self, epoch, test=False):
         self.model.eval()
         self.evaluator.reset()
-        tbar = tqdm(self.val_loader, desc='\r')
+
+        if test:
+            tbar = tqdm(self.test_loader, desc='\r')
+        else:
+            tbar = tqdm(self.val_loader, desc='\r')
+
         for i, sample in enumerate(tbar):
             image, target = sample['image'], sample['labels']
 

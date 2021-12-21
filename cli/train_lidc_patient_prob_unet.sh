@@ -1,6 +1,6 @@
 python train.py \
     -m \
-    mode=train \
+    mode=test \
     epochs=300 \
     model="prob_unet" \
     model.num_samples=4 \
@@ -14,4 +14,5 @@ python train.py \
     apply_sigmoid="False" \
     optim=adam \
     optim.lr=1e-4 \
-    optim.weight_decay=1e-5
+    optim.weight_decay=1e-5 \
+    resume="/data/ssd/wanghao/bOEMD_results/lidc-patient/prob-unet-lidc-patient/experiment_05/checkpoint.pth.tar"
