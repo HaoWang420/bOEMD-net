@@ -55,7 +55,7 @@ class BBBConv2d(ModuleWrapper):
         self.groups = 1
         self.use_bias = bias
         # self.device = torch.device('cpu')
-        self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+        # self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 
         if priors is None:
@@ -74,17 +74,23 @@ class BBBConv2d(ModuleWrapper):
         self.W = None
         self.bias = None
 
-        self.W_mu = Parameter(torch.empty((out_channels, in_channels, *self.kernel_size), device=self.device))
-        self.W_rho = Parameter(torch.empty((out_channels, in_channels, *self.kernel_size), device=self.device))
+        self.W_mu = Parameter(torch.empty((out_channels, in_channels, *self.kernel_size)))
+        self.W_rho = Parameter(torch.empty((out_channels, in_channels, *self.kernel_size)) )
 
         if self.use_bias:
-            self.bias_mu = Parameter(torch.empty((out_channels), device=self.device))
-            self.bias_rho = Parameter(torch.empty((out_channels), device=self.device))
+            self.bias_mu = Parameter(torch.empty((out_channels)))
+            self.bias_rho = Parameter(torch.empty((out_channels)))
         else:
             self.register_parameter('bias_mu', None)
             self.register_parameter('bias_rho', None)
 
         self.reset_parameters()
+    def cuda(self,):
+        self.W_mu.cuda()
+        self.W_rho.cuda()
+        if self.use_bias:
+            self.bias_mu.cuda()
+            self.bias_rho.cuda()
 
     def reset_parameters(self):
         self.W_mu.data.normal_(*self.posterior_mu_initial)
