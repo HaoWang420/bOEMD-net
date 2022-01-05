@@ -15,6 +15,7 @@ def main(args: DictConfig):
             raise ValueError('Argument --gpu_ids must be a comma-separated list of integers only')
 
     # set random seed
+    torch.autograd.set_detect_anomaly(True)
     torch.manual_seed(args.seed)
     np.random.seed(args.seed)
 

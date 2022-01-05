@@ -1,3 +1,4 @@
 name: "qubiq"
 task: NULL
 task_id: 0
+mode: "qubiq"

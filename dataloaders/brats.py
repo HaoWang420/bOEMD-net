@@ -1,8 +1,10 @@
 import os
 from os import scandir
+from re import sub
 
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 import nibabel as nib
 import numpy as np
 from PIL import Image
@@ -15,21 +17,18 @@ from mypath import Path
 NANNOTATOR = {
         'brain-tumor': 3,
         'brain-growth': 7,
-        # TODO
         'kidney': 3,
         'prostate': 6,
         }
 NCLASS = {
         'brain-tumor': 3,
         'brain-growth': 1,
-        # TODO
         'kidney': 1,
         'prostate': 2,
         
         }
 MEANS = {
         'brain-tumor': 501.699,
-        # TODO
         'brain-growth': 569.1935,
         'kidney': -383.4882,
         'prostate': 429.64
@@ -37,16 +36,15 @@ MEANS = {
 
 STDS = {
         'brain-tumor': 252.760,
-        # TODO
         'brain-growth': 189.9989,
         'kidney': 472.0944,
         'prostate': 300.0039
         }
 NCHANNEL = {
-    'brain-tumor': 4,
-    'brain-growth': 1,
-    'kidney': 1,
-    'prostate': 1
+        'brain-tumor': 4,
+        'brain-growth': 1,
+        'kidney': 1,
+        'prostate': 1
 }
 
 
@@ -62,7 +60,13 @@ class UncertainBraTS(torch.utils.data.Dataset):
             'kidney': -1025.,
             'prostate': 0.0
             }
-    def __init__(self, root=Path.getPath('QUBIQ'), mode='train', dataset='brain-tumor', task=0, output='threshold'):
+    def __init__(self, 
+                 root=Path.getPath('QUBIQ'), 
+                 mode='train', 
+                 dataset='brain-tumor', 
+                 task=0, 
+                 output='threshold', 
+                 label_mode='qubiq'):
         """
         choices of dataset ['brain-tumor', 'brain-growth', 'kidney', 'prostate']
         
@@ -71,6 +75,7 @@ class UncertainBraTS(torch.utils.data.Dataset):
         self.root = root
         # self.args = args
         self.mode = mode
+        self.label_mode = label_mode
         self.dataset = dataset
         # set number of class(es)
         self.NCLASS = NANNOTATOR[dataset]
@@ -105,6 +110,8 @@ class UncertainBraTS(torch.utils.data.Dataset):
                 # discard cases with empty label
                 if mode=='train' and dataset == 'brain-tumor' and task == 2 and subdir.name[-2:] in ['01', '03', '06', '07', '11']:
                     continue
+                if mode == 'train' and dataset == 'prostate' and task == 1 and subdir.name[-2:] in ['09']:
+                    continue
                 with os.scandir(subdir) as ssdir:
                     tasks = []
                     for ii in range(self.NCLASS):
@@ -131,7 +138,6 @@ class UncertainBraTS(torch.utils.data.Dataset):
         self.std = STDS[dataset]
         self.original = False
 
-
     def __getitem__(self, index):
         x = nib.load(self.imgs[index]).get_fdata()
         thres = self.THRESHOLD_BACKGROUND[self.dataset]
@@ -150,49 +156,41 @@ class UncertainBraTS(torch.utils.data.Dataset):
                 x = torch.from_numpy(np.transpose(x, [2, 0, 1])).float()
             else:
                 x = torch.from_numpy(np.array([x])).float()
-            return {'image': x}
 
         y = []
         for lb in self.labels[index][self.task]:
             y.append(nib.load(lb).get_fdata())
-        if self.output == 'threshold':
-            y = np.mean(np.stack(y), axis=0, keepdims=False)
-            y_thres = []
-            for ii in range(NANNOTATOR[self.dataset]):
-                y_thres.append(y >= (float(ii + 1) / NANNOTATOR[self.dataset]))
-            y = y_thres
-        elif self.output == 'annotator':
-            y = np.stack(y)
+        y = np.stack(y)
+
+        x, labels = self.__transform(x, y)
+
+        if self.label_mode == 'ged':
+            label = labels[np.random.randint(self.NCLASS)]
+            return {'image': x, 'label': label, 'labels': labels}
         else:
-            y = np.mean(np.stack(y), axis=0, keepdims=False)
-            # for cross entropy
-            y = np.floor(y*10).astype(np.long)
-
-
-        x, y = self.__transform(x, y)
-        
-        result = {'image': x, 'label': y}
-        
-        return result
+            return {'image': x, 'label': labels}
 
     def __transform(self, x, y):
         # transpose from HWC to CHW
         if self.dataset == 'brain-tumor':
             x = torch.from_numpy(np.transpose(x, [2, 0, 1])).float()
+            x = F.pad(x[None, ...], [8, 8, 8, 8]).squeeze()
             y = torch.from_numpy(np.array(y)).float()
+            y = F.pad(y[None, ...], [8, 8, 8, 8]).squeeze()
         elif self.dataset == 'brain-growth':
             x = torch.from_numpy(np.array([x])).float()
             y = torch.from_numpy(np.array(y)).float()
         elif self.dataset == 'kidney':
             x = torch.from_numpy(np.array([x])).float()
+            x = F.pad(x, [8, 7, 8, 7])
             y = torch.from_numpy(np.array(y)).float()
+            y = F.pad(y, [8, 7, 8, 7])
         elif self.dataset == 'prostate':
             x = torch.from_numpy(np.array([x])).float()
             y = torch.from_numpy(np.squeeze(y)).float()
-            if self.mode != 'test':
-                if x.shape[1] == 960:
-                    x = x[:, 160:800, :]
-                    y = y[:, 160:800, :]
+            if x.shape[1] == 960:
+                x = x[:, 160:800, :]
+                y = y[:, 160:800, :]
             x = x[:, :, :, 0]
         return x, y
 

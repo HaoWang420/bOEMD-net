@@ -32,7 +32,7 @@ class PhiSegTrainer(Trainer):
 
         # Show 10 * 3 inference results each epoch
         global_step = i + num_img_tr * epoch
-        self.summary.visualize(self.writer, image, target, output, global_step)
+        # self.summary.visualize(self.writer, image, target, output, global_step)
 
         self.writer.add_scalar('train/total_loss_epoch', train_loss / i, epoch)
         self.writer.add_scalar("train/total_kl_loss_epoch", kl_loss / i, epoch)
@@ -42,7 +42,8 @@ class PhiSegTrainer(Trainer):
     
     def forward_iter(self, image, target, epoch, step):
         output, loss, kl = self.model.forward(image, target)
-        output = self.model.module.accumulate_output(output)
+        # output = self.model.module.accumulate_output(output)
+        output = None
         
         return output, kl.mean(), loss.mean()
     

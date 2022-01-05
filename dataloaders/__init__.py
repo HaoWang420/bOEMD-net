@@ -21,9 +21,9 @@ def make_data_loader(args, **kwargs):
         else:
             output = 'annotator'
 
-        train_set = UncertainBraTS(mode='train', dataset=args.dataset.task, task=args.dataset.task_id, output=output)
-        val_set = UncertainBraTS(mode='val', dataset=args.dataset.task, task=args.dataset.task_id, output=output)
-        test_set = UncertainBraTS(mode='test', dataset=args.dataset.task, task=args.dataset.task_id, output=output)
+        train_set = UncertainBraTS(mode='train', dataset=args.dataset.task, task=args.dataset.task_id, output=output, label_mode=args.dataset.mode)
+        val_set = UncertainBraTS(mode='val', dataset=args.dataset.task, task=args.dataset.task_id, output=output, label_mode=args.dataset.mode)
+        test_set = UncertainBraTS(mode='test', dataset=args.dataset.task, task=args.dataset.task_id, output=output, label_mode=args.dataset.mode)
 
         nclass = train_set.NCLASS
         nchannel = train_set.NCHANNEL

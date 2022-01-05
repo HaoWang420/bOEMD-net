@@ -1,5 +1,6 @@
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 import numpy as np
 import revtorch as rv
 
@@ -63,9 +64,12 @@ class UpConvolutionalBlock(nn.Module):
         if self.bilinear:
             x = nn.functional.interpolate(x, mode='bilinear', scale_factor=2, align_corners=True)
             x = self.upconv_layer(x)
+        # diffY = x.size()[2] - bridge.size()[2]
+        # diffX = x.size()[3] - bridge.size()[3]
 
-        assert x.shape[3] == bridge.shape[3]
-        assert x.shape[2] == bridge.shape[2]
+        # bridge = F.pad(bridge, [diffX // 2, diffX - diffX // 2,
+                        # diffY // 2, diffY - diffY // 2])
+
         out = torch.cat([x, bridge], dim=1)
 
         return out
@@ -279,8 +283,9 @@ class Likelihood(nn.Module):
         output = self.num_classes
         for i in reversed(range(self.latent_levels)):
             input = self.num_filters[i + self.lvl_diff]
-            self.s_layer.append(Conv2DSequence(
-                input_dim=input, output_dim=output, depth=1, kernel=1, activation=torch.nn.Identity, norm=torch.nn.Identity))
+            # self.s_layer.append(Conv2DSequence(
+                # input_dim=input, output_dim=output, depth=1, kernel=1, activation=torch.nn.Identity, norm=torch.nn.Identity))
+            self.s_layer.append(nn.Conv2d(input, output, kernel_size=1, stride=1, padding=1))
 
     def forward(self, z):
         """Likelihood network which takes list of latent variables z with dimension latent_levels"""
@@ -507,7 +512,6 @@ class PHISeg(nn.Module):
                 self.loss_dict['residual_multinoulli_loss_lvl%d' % ii] = criterion(self.s_accumulated[ii], target)
 
             else:
-
                 self.s_accumulated[ii] = self.s_accumulated[ii+1] + s_ii
                 self.loss_dict['residual_multinoulli_loss_lvl%d' % ii] = criterion(self.s_accumulated[ii], target)
 
