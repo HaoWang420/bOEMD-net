@@ -6,7 +6,7 @@ import cv2
 import os
 import matplotlib.cm as cm
 import matplotlib.pyplot as plt
-from modeling import UNet, MultiUNet, MDecoderUNet, DecoderUNet
+from modeling import UNet, MultiUNet, MDecoderUNet, DecoderUNet, PHISeg
 
 parant_path = "/data/ssd/qingqiao/BOEMD_run_test/qubiq/"
 
@@ -32,7 +32,7 @@ def preproc_image(x, nlabels=None):
 
     # x_b = cv2.cvtColor(np.squeeze(x_b), cv2.COLOR_GRAY2BGR)
     # x_b = utils.histogram_equalization(x_b)
-    x_b = resize_image(x_b, (2 * ims[0], 2 * ims[1]), interp=cv2.INTER_NEAREST)
+    # x_b = resize_image(x_b, (2 * ims[0], 2 * ims[1]), interp=cv2.INTER_NEAREST)
 
     # ims_n = x_b.shape[:2]
     # x_b = x_b[ims_n[0]//4:3*ims_n[0]//4, ims_n[1]//4: 3*ims_n[1]//4,...]
@@ -54,12 +54,17 @@ def plotNNFilterOverlay(input_im, units, figure_id, interp='bilinear',
 
     # plt.subplots_adjust(wspace=0, hspace=0)
     # plt.tight_layout()
+def sigmoid(x):
+    sig = nn.Sigmoid()
+    return sig(x)
+    # x = np.clip(x, -88.72, 88.72)
 
+    # return 1 / (1 + np.exp(-x))
 def draw_seg(dataset, model_name, model, path, task_name):
-    index = 2
-    threshold  = 0
-
-
+    index = 1
+    threshold  = 0.9
+    if model_name == "phiseg":
+        path = r"/data/ssd/wanghao/bOEMD_results/qubiq/phiseg-brain-tumor-task-1/experiment_03/checkpoint.pth.tar"
     params = torch.load(path)
     fig_path = "./figs/{}".format(model_name)
     if not os.path.exists(fig_path):
@@ -69,16 +74,28 @@ def draw_seg(dataset, model_name, model, path, task_name):
 
     il = dataset[index]
     x = il['image']
+    print("image shape", x.shape)
     y = il['label'][None, ...]
     
-    dataset.original = True
+    dataset.original = False
     x_p = dataset[index]['image']
 
-    sigmoid = nn.Sigmoid()
 
     model.eval()
     with torch.no_grad():
-        y_p = sigmoid(model(x[None, ...]))
+        if model_name == "phiseg":
+            
+            x_temp = x[None, ...].repeat(3, 1,1,1)
+            
+            pred_list = model.forward(x_temp, None)
+            y_p = model.accumulate_output(pred_list)
+            y_p = torch.argmax(y_p, dim=1)
+            y_p = y_p[None, ...].float()
+            
+            # pred = pred.reshape([n, nsamples, h, w])
+            # y_p = sigmoid(model.accumulate_output(pred_list))
+        else:
+            y_p = sigmoid(model(x[None, ...]) )
        
 
     print( model_name,y_p.shape, y.shape)
@@ -114,21 +131,24 @@ def draw_seg(dataset, model_name, model, path, task_name):
     
         
         plt.figure()
-        # s_p_d = preproc_image(y_p[:, ii:ii+1] > threshold, nlabels=2)
+        # s_p_d = preproc_image(y_p[:, ii:ii+1] , nlabels=2)
         # plt.imshow(s_p_d, cmap='gray')
         # plt.axis('off')
         # plt.savefig("./figs/{}/{}_sample_{}_{}.png".format(model_name,task_name, str(ii),str(index)), bbox_inches= 'tight')
-        plotNNFilterOverlay(y_p[:, ii:ii+1], np.zeros_like(y_p), ii + 4, title='sample {}'.format(ii), alpha=0.1)
+        plotNNFilterOverlay(y_p[:, ii:ii+1] > threshold, np.zeros_like(y_p), ii + 4, title='sample {}'.format(ii), alpha=0.1)
         plt.savefig("./figs/{}/{}_sample_{}_{}.png".format(model_name,task_name, str(ii),str(index)))
     plt.figure()
-    plotNNFilterOverlay(np.zeros_like(x_p[None, ...]), gamma_map[None, None, ...], 3, title='gamma map', alpha=0.8)
+    g = preproc_image(gamma_map, nlabels=2)
+    plt.imshow(g, cmap = "gray")
+    plt.axis('off')
+    # plotNNFilterOverlay(gamma_map[None, None, ...], np.zeros_like(x_p[None, ...]), 3, title='gamma map', alpha=0.3)
     plt.savefig("./figs/{}/{}_gamma_map_{}.png".format(model_name,task_name, str(index)))
     plt.close('all')
 
 def draw_ground_truth(dataset, task_name):
    
-    index = 2
-    threshold  = 0
+    index = 1
+    threshold  = 0.8
 
 
     il = dataset[index]
@@ -167,20 +187,17 @@ def draw_ground_truth(dataset, task_name):
     
 if __name__ == "__main__":
     
-    dataset = UncertainBraTS(mode='val', dataset='brain-tumor', task=1, output='annotator')
+    dataset = UncertainBraTS(mode='val', dataset='brain-tumor', task=0, output='annotator')
     n_classes = dataset.NCLASS
     n_channels = 4
     task_name = "brain_tumor_task1"
-    models = {"boemd": MDecoderUNet(n_channels, n_classes), "decoder_attn_unet": DecoderUNet(n_channels, n_classes, attention= "attn"), 
-              "decoder_unet": DecoderUNet(n_channels, n_classes), "multi_unet": MultiUNet(n_channels, n_classes), 
-              "unet": UNet(n_channels, n_classes)}
+    # models = {"boemd": MDecoderUNet(n_channels, n_classes), "decoder_attn_unet": DecoderUNet(n_channels, n_classes, attention= "attn"), 
+    #           "decoder_unet": DecoderUNet(n_channels, n_classes), "multi_unet": MultiUNet(n_channels, n_classes), 
+    #           "unet": UNet(n_channels, n_classes)}
+    models = {"phiseg": PHISeg(n_channels, 2, [32, 64, 128, 192, 192, 192, 192], image_size=[4, 256, 256])}
     draw_ground_truth(dataset, task_name)
     for model in list(models.keys()):
-        experiment = "experiment_00"
+        experiment = "experiment_01"
         # if model != "boemd":
         #     experiment = "experiment_01"
-        draw_seg(dataset, model, models[model], os.path.join(parant_path, model, experiment, "checkpoint.pth.tar"), task_name)
-    
-    
-    
-    
+        draw_seg(dataset, model, models[model], os.path.join(parant_path, model, experiment, "checkpoint.pth.tar"), task_name)    
