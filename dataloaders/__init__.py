@@ -2,6 +2,7 @@ from torchvision import transforms
 from dataloaders.brats import UncertainBraTS
 from dataloaders.brats import BraTSSet
 from dataloaders.lidc import LIDC_IDRI, LIDC_SYN, LIDC_IDRI_patient_id
+from dataloaders.liver import Liver_p_id
 from torch.utils.data import DataLoader
 from torch.utils.data.sampler import SubsetRandomSampler
 
@@ -140,7 +141,33 @@ def make_data_loader(args, **kwargs):
         np.random.shuffle(indices)
 
         train_indices, test_indices, val_indices = indices[2*split:], indices[1*split:2*split], indices[:split]
-
+    elif args.dataset.name == "liver":
+        nchannel = 1
+        nclass = 3
+        
+        liver_train_set = Liver_p_id(  mode = "fix", data_mode='train')
+        liver_val_set = Liver_p_id( mode = "fix", data_mode='val')
+        liver_test_set = Liver_p_id( mode = "fix", data_mode='test')
+        
+        train_loader = DataLoader(liver_train_set, batch_size = args.batch_size, shuffle= True,  num_workers = args.workers, pin_memory = False)
+        validation_loader = DataLoader(liver_val_set, batch_size = args.test_batch_size, shuffle = False, num_workers = args.workers, pin_memory = False)
+        test_loader = DataLoader(liver_test_set, batch_size = args.test_batch_size, shuffle = False, num_workers = args.workers, pin_memory = False)
+        
+        return train_loader, validation_loader, test_loader, nclass, nchannel, len(liver_train_set)
+    elif args.dataset.name == "liver-rand":
+        
+        nchannel = 1
+        nclass = 3
+        
+        liver_train_set = Liver_p_id(  mode = "random", data_mode='train')
+        liver_val_set = Liver_p_id(  mode = "random", data_mode='val')
+        liver_test_set = Liver_p_id(  mode = "random", data_mode='test')
+        
+        train_loader = DataLoader(liver_train_set, batch_size = args.batch_size, shuffle= True,  num_workers = args.workers, pin_memory = False)
+        validation_loader = DataLoader(liver_val_set, batch_size = args.test_batch_size, shuffle = False, num_workers = args.workers, pin_memory = False)
+        test_loader = DataLoader(liver_test_set, batch_size = args.test_batch_size, shuffle = False, num_workers = args.workers, pin_memory = False)
+        
+        return train_loader, validation_loader, test_loader, nclass, nchannel, len(liver_train_set)
     else:
         raise NotImplementedError
 
