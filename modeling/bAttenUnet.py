@@ -377,7 +377,7 @@ class ODecoderUNet(nn.Module):
         self.n_classes = n_classes
 
         self.encoder = Encoder(n_channels, bilinear)
-        self.decoder = Decoder(n_classes, bilinear)
+        self.decoder = Decoder(n_classes, bilinear, attention= attention)
     
     def forward(self, x):
         x = self.encoder(x)

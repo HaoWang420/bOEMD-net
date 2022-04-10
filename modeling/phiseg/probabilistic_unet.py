@@ -7,6 +7,15 @@ import torch
 import torch.nn as nn
 from modeling.phiseg.unet import Unet
 from torch.distributions import Normal, Independent, kl
+# This code is based on: https://github.com/SimonKohl/probabilistic_unet
+# Author: Stefan Knegt https://github.com/stefanknegt/Probabilistic-Unet-Pytorch/
+# Modifications: Marc Gantenbein
+# This software is licensed under the Apache License 2.0
+
+import torch
+import torch.nn as nn
+from modeling.phiseg.unet import Unet
+from torch.distributions import Normal, Independent, kl
 import numpy as np
 
 from modeling.phiseg import utils
