@@ -15,12 +15,13 @@ python train.py \
     optim=sgd \
     seed=42 \
     optim.lr=1e-3 \
+    resume="/data/ssd/qingqiao/BOEMD_run_test/lidc-patient/lidc_patient_unet/experiment_00/checkpoint.pth.tar"
 
 python train.py \
-    mode=train \
+    mode=test \
     epochs=200 \
     model=multi_unet\
-    model.dropout=True \
+    model.dropout=False \
     model.drop_p=0.3 \
     eval_interval=5 \
     gpu_ids="'0'" \
@@ -33,9 +34,10 @@ python train.py \
     optim=sgd \
     seed=42 \
     optim.lr=1e-3 \
+    resume="/data/ssd/qingqiao/BOEMD_run_test/lidc-patient/lidc_patient_multi_unet/experiment_00/checkpoint.pth.tar"
 
 python train.py \
-    mode=train \
+    mode=test \
     epochs=200 \
     model=oemd\
     model.dropout=True \
@@ -52,13 +54,13 @@ python train.py \
     optim=sgd \
     seed=42 \
     optim.lr=1e-3 \
-
+    resume="/data/ssd/qingqiao/BOEMD_run_test/lidc-patient/lidc_patient_decoder_unet/experiment_01/checkpoint.pth.tar"
 
 python train.py \
-    mode=train \
+    mode=test \
     epochs=200 \
     model=oemd\
-    model.dropout=True \
+    model.dropout=False \
     model.drop_p=0.3 \
     model.attention='attn' \
     eval_interval=5 \
@@ -72,3 +74,4 @@ python train.py \
     optim=sgd \
     seed=42 \
     optim.lr=1e-3 \
+    resume="/data/ssd/qingqiao/BOEMD_run_test/lidc-patient/lidc_patient_decoder_attn_unet/experiment_00/checkpioont.pth.tar"

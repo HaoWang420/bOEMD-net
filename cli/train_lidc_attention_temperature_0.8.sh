@@ -1,0 +1,17 @@
+python train.py \
+       --workers 4 \
+       --lr 0.5 \
+       --epochs 200 \
+       --gpu-ids 0 \
+       --batch-size 32 \
+       --test-batch-size 1 \
+       --checkname attn-unet-lidc-temperatue-0.8 \
+       --eval-interval 4 \
+       --dataset lidc \
+       --loss-type dice \
+       --nchannels 1 \
+       --model attn-unet \
+       --nclass 4 \
+       --task-num 0 \
+       --temperature-list 0.8 0.8 0.8 0.8 \
+       --save-path /data/ssd/qingqiao/BOEMD_run_test
