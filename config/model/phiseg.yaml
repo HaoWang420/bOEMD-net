@@ -1,0 +1,5 @@
+name: 'phiseg'
+nfilters: [32, 64, 128, 192, 192, 192, 192]
+latent_levels: 5
+img_size: [1, 128, 128]
+num_samples: 4

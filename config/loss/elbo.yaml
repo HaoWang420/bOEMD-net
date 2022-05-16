@@ -1,0 +1,5 @@
+name: "elbo"
+beta_type: "Standard"
+weights:
+  dice: 1.0
+  kl: 1.0
