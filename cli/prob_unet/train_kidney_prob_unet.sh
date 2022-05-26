@@ -13,7 +13,6 @@ python train.py \
     dataset.task_id=0 \
     dataset.mode="ged" \
     checkname=prob-unet-kidney-task-0 \
-    save_path=/data/ssd/${USER}/BOEMD_run_test/ \
     apply_sigmoid="False" \
     optim=adam \
     optim.lr=1e-4 \

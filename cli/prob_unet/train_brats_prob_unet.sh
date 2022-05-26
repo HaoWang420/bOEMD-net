@@ -13,7 +13,6 @@ python train.py \
     dataset.task_id=1 \
     dataset.mode="ged" \
     checkname=prob-unet-brain-tumor-task-1 \
-    save_path=/data/ssd/${USER}/BOEMD_run_test/ \
     apply_sigmoid="False" \
     optim=adam \
     optim.lr=1e-4 \

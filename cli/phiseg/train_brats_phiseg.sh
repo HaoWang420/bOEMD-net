@@ -13,7 +13,6 @@ python train.py \
     dataset.task_id=2 \
     dataset.mode="ged" \
     checkname=phiseg-brain-tumor-task-3 \
-    save_path=/data/ssd/${USER}/bOEMD_results/ \
     apply_sigmoid="False" \
     optim=adam \
     optim.lr=1e-3 \

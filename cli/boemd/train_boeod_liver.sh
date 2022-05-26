@@ -11,7 +11,6 @@ python train.py \
     dataset=liver \
     loss='elbo' \
     checkname=boeod_liver \
-    save_path=/data/ssd/${USER}/BOEMD_run_test/ \
     optim=adam \
     optim.lr=1e-3 \
     optim.weight_decay=1e-5

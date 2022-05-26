@@ -12,7 +12,6 @@ python train.py \
     dataset.task_id=0 \
     loss='elbo'
     checkname=boemd-prostate-task-0 \
-    save_path=/data/ssd/${USER}/bOEMD_results/ \
     optim=adam \
     optim.lr=1e-3 \
     optim.weight_decay=1e-5
