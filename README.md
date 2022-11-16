@@ -32,7 +32,7 @@ bash cli/boemd/train_bomd_lidc_patient.sh
 Our work is released under the MIT license. Please check the [LICENSE](LICENSE) for more information.
 
 ## Citation
-If you find our work is helpful for your research, please include our code in your work. 
+If you find our work is helpful for your research, please cite our code repository in your work. 
 
 ## Acknowledgement
 Phiseg code is based on [Phiseg-code](https://github.com/baumgach/PHiSeg-code) and built upon [UNet-Zoo](https://github.com/stefanknegt/Probabilistic-Unet-Pytorch/).
