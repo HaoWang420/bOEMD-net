@@ -10,7 +10,6 @@ revtorch==0.2.4
 scikit_image==0.16.2
 scipy==1.6.2
 SimpleITK==2.1.1.2
-skimage==0.0
 tensorboardX==2.5
 torch==1.10.1
 torchvision==0.11.2
