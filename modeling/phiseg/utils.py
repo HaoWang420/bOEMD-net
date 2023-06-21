@@ -301,6 +301,7 @@ def convert_to_onehot_torch(lblmap, nlabels):
 
 def convert_batch_to_onehot(lblbatch, nlabels):
     # N H W C
+    # print('input image shape', lblbatch.shape)
     lblbatch = F.one_hot(lblbatch.long(), num_classes=2)
     lblbatch = lblbatch.permute(0, 3, 1, 2)
     return lblbatch

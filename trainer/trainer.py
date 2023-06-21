@@ -33,7 +33,7 @@ class Trainer(object):
         # Define network
         self.model = None
         self.model = build_model(args.model, self.nchannel, self.nclass, args.model.name)
-
+        print(self.model)
 
         # Define Optimizer
         self.optimizer = None
@@ -159,8 +159,10 @@ class Trainer(object):
         for metric in results:
             print(f"{metric} {results[metric]}")
 
-        is_best = True
-        self.best_pred = results['qubiq']
+        is_best = False
+        if self.best_pred < results['qubiq']:
+            is_best = True
+            self.best_pred = results['qubiq']
         self.saver.save_checkpoint({
             'epoch': epoch + 1,
             'state_dict': self.model.module.state_dict(),

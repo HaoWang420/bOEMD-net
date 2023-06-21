@@ -113,7 +113,7 @@ class AxisAlignedConvGaussian(nn.Module):
         if segm is not None:
             with torch.no_grad():
                 segm_one_hot = utils.convert_batch_to_onehot(segm, nlabels=2) \
-                    .to(torch.device('cuda' if torch.cuda.is_available() else 'cpu'))
+                    .to(torch.device(device))
 
                 segm_one_hot = segm_one_hot.float()
             input = torch.cat([input, torch.add(segm_one_hot, -0.5)], dim=1)
