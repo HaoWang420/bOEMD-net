@@ -1,18 +1,16 @@
 python train.py \
     -m \
     mode=train \
-    epochs=500 \
+    epochs=300 \
     model=phiseg \
     model.num_samples=3 \
-    model.img_size='[4,256,256]' \
+    model.img_size='[1,400,400]' \
     gpu_ids="'0'" \
     batch_size=4 \
     test_batch_size=1 \
-    dataset=qubiq \
-    dataset.task='brain-tumor' \
-    dataset.task_id=2 \
-    dataset.mode="ged" \
-    checkname=phiseg-brain-tumor-task-3 \
+    dataset=liver \
+    dataset.mode='choice' \
+    checkname=phiseg-liver-tumor \
     save_path=/data/sdb/${USER}/bOEMD_results/ \
     apply_sigmoid="False" \
     optim=adam \

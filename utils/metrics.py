@@ -187,7 +187,7 @@ class Evaluator(object):
         sd = []
         for ii in range(N):
             for jj in range(M):
-                sd.append(dist_fct(sample_arr[ii, ...], gt_arr[jj, ...]))
+                sd.append(1 - dist_fct(sample_arr[ii, ...], gt_arr[jj, ...]))
 
         return np.mean(sd)
 

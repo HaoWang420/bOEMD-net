@@ -20,9 +20,9 @@ class Saver(object):
 
     def save_checkpoint(self, state, is_best, filename='checkpoint.pth.tar'):
         """Saves checkpoint to disk"""
-        filename = os.path.join(self.experiment_dir, filename)
-        torch.save(state, filename)
         if is_best:
+            filename = os.path.join(self.experiment_dir, filename)
+            torch.save(state, filename)
             best_pred = state['best_pred']
             with open(os.path.join(self.experiment_dir, 'best_pred.txt'), 'w') as f:
                 f.write(str(best_pred))
