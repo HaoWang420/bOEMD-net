@@ -16,7 +16,6 @@ from torch.utils.data import DataLoader
 from torch.utils.data.sampler import SubsetRandomSampler
 
 from skimage.morphology import erosion, dilation, disk
-
 from mypath import Path
 
 
@@ -262,3 +261,5 @@ if __name__ == "__main__":
     for x, y in test_sampler:
         print(x.shape)
         print(y.shape)
+        break
+    

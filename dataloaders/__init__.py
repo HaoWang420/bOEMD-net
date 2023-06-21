@@ -143,29 +143,20 @@ def make_data_loader(args, **kwargs):
         train_indices, test_indices, val_indices = indices[2*split:], indices[1*split:2*split], indices[:split]
     elif args.dataset.name == "liver":
         nchannel = 1
-        nclass = 3
+        if args.dataset.mode == "choice":
+            nclass = 1
+        else:
+            nclass = 2
         
-        liver_train_set = Liver_p_id(  mode = "fix", data_mode='train')
-        liver_val_set = Liver_p_id( mode = "fix", data_mode='val')
-        liver_test_set = Liver_p_id( mode = "fix", data_mode='test')
-        
-        train_loader = DataLoader(liver_train_set, batch_size = args.batch_size, shuffle= True,  num_workers = args.workers, pin_memory = False)
-        validation_loader = DataLoader(liver_val_set, batch_size = args.test_batch_size, shuffle = False, num_workers = args.workers, pin_memory = False)
-        test_loader = DataLoader(liver_test_set, batch_size = args.test_batch_size, shuffle = False, num_workers = args.workers, pin_memory = False)
-        
-        return train_loader, validation_loader, test_loader, nclass, nchannel, len(liver_train_set)
-    elif args.dataset.name == "liver-rand":
-        
-        nchannel = 1
-        nclass = 3
-        
-        liver_train_set = Liver_p_id(  mode = "random", data_mode='train')
-        liver_val_set = Liver_p_id(  mode = "random", data_mode='val')
-        liver_test_set = Liver_p_id(  mode = "random", data_mode='test')
+        liver_train_set = Liver_p_id(  mode = args.dataset.mode, data_mode='train')
+        liver_val_set = Liver_p_id( mode = args.dataset.mode, data_mode='val')
+        liver_test_set = Liver_p_id( mode = args.dataset.mode, data_mode='test')
         
         train_loader = DataLoader(liver_train_set, batch_size = args.batch_size, shuffle= True,  num_workers = args.workers, pin_memory = False)
         validation_loader = DataLoader(liver_val_set, batch_size = args.test_batch_size, shuffle = False, num_workers = args.workers, pin_memory = False)
         test_loader = DataLoader(liver_test_set, batch_size = args.test_batch_size, shuffle = False, num_workers = args.workers, pin_memory = False)
+        
+        print("train length", len(liver_train_set), " val length", len(liver_val_set), " test_length", len(liver_test_set))
         
         return train_loader, validation_loader, test_loader, nclass, nchannel, len(liver_train_set)
     else:
