@@ -1,0 +1,16 @@
+hydra-core==1.1.2
+matplotlib==3.4.3
+MedPy==0.4.0
+nibabel==3.2.1
+numpy==1.19.2
+omegaconf==2.1.1
+opencv_python==4.5.4.60
+Pillow==9.1.0
+revtorch==0.2.4
+scikit_image==0.16.2
+scipy==1.6.2
+SimpleITK==2.1.1.2
+tensorboardX==2.5
+torch==1.10.1
+torchvision==0.11.2
+tqdm==4.62.1
