@@ -4,7 +4,7 @@ import hydra
 from omegaconf import OmegaConf, DictConfig
 
 from trainer import build_trainer
-
+import time
 @hydra.main(config_path="config", config_name="config")
 def main(args: DictConfig):
     print(OmegaConf.to_yaml(args))
@@ -43,7 +43,10 @@ def evaluate(trainer):
     trainer.val(0)
 
 def test(trainer):
+    start_time = time.time()
     trainer.val(0, test=True)
+    print("--- %s seconds ---" % (time.time() - start_time))
+    
 
 if __name__ == "__main__":
     main()
