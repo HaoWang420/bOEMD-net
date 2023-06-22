@@ -8,6 +8,7 @@ import nibabel as nib
 import numpy as np
 import random
 from torchvision import transforms
+import torch.nn.functional as F
 
 class SpatialRotation():
     def __init__(self, dimensions: Sequence, k: Sequence = [3], auto_update=True):
@@ -127,12 +128,16 @@ class Liver_p_id(Dataset):
         image = image.type(torch.FloatTensor)
         labels = labels.type(torch.FloatTensor)
         
+        # pad the image and label to dimenstion 512*512
+        
         #Normalize inputs
         self.transform(image)
         out = {}
         if self.mode == 'choice' and self.data_mode == "train":
             out['label'] = labels[np.random.randint(len(labels))][None, ...]
         elif self.mode == "choice_p":
+            image = F.pad(image, (56, 56, 56, 56))
+            labels = F.pad(labels, (56, 56, 56, 56))
             out['label'] = labels[np.random.randint(len(labels))]
         else:
             out['label'] = labels

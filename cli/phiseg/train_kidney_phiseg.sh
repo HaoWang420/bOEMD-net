@@ -13,7 +13,7 @@ python train.py \
     dataset.task_id=0 \
     dataset.mode="ged" \
     checkname=phiseg-kidney-task-0 \
-    save_path=/data/ssd/${USER}/bOEMD_results/ \
+    save_path=/data/sdb/${USER}/bOEMD_results/ \
     apply_sigmoid="False" \
     optim=adam \
     optim.lr=1e-3 \

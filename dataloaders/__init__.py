@@ -143,7 +143,7 @@ def make_data_loader(args, **kwargs):
         train_indices, test_indices, val_indices = indices[2*split:], indices[1*split:2*split], indices[:split]
     elif args.dataset.name == "liver":
         nchannel = 1
-        if args.dataset.mode == "choice":
+        if args.dataset.mode == "choice" or args.dataset.mode == "choice_p":
             nclass = 1
         else:
             nclass = 2
