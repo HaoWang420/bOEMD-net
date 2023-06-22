@@ -117,6 +117,7 @@ class SegmentationLosses(object):
 
     def ForeBackGroundDice(self, logit, target, smooth=1.0):
         return self.SoftDiceLoss(logit, target) + self.SoftDiceLoss(logit, target, back=True)
+
     
     def dice_coef(self, preds, targets):
         smooth = 1.0
