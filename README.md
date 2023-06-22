@@ -1,7 +1,11 @@
 # bOEMD-Net
-This is the official code repository for *Bayesian Attention for Inter-Rater Uncertainty Quantification in Medical Image Segmentation*.
+
+The *project* pape is [here](https://winstonhutiger.github.io/project/qubiq_uncertainty_quanification/). 
+
+This is the official code repository for *Inter-Rater Uncertainty Quantification in Medical Image Segmentation via Rater-Specific Bayesian Neural Networks*.
 
 In this work, we present a simple yet effective Bayesian neural network architecture to estimate the inter-rater uncertainty in medical image segmentation.
+
 
 ## Usage
 
