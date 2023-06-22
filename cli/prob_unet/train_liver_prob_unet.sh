@@ -11,7 +11,7 @@ python train.py \
     dataset=liver \
     dataset.mode='choice_p' \
     checkname=prob-unet-liver-tumor \
-    save_path=/data/sdb/${USER}/BOEMD_run_test/ \
+    save_path=/data/sdb/${USER}/bOEMD_results/ \
     apply_sigmoid="False" \
     optim=adam \
     optim.lr=1e-4 \

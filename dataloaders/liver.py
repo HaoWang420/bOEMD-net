@@ -139,6 +139,7 @@ class Liver_p_id(Dataset):
             image = F.pad(image, (56, 56, 56, 56))
             labels = F.pad(labels, (56, 56, 56, 56))
             out['label'] = labels[np.random.randint(len(labels))]
+            out['labels'] = labels
         else:
             out['label'] = labels
         out['image'] = image
