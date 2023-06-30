@@ -74,21 +74,22 @@ class PhiSegTrainer(Trainer):
             self.evaluator.add_batch(target, pred)
 
         results = self.evaluator.compute()
-
-        for metric in results:
-            self.writer.add_scalar(metric, results[metric], epoch)
-
         for metric in results:
             print(f"{metric} {results[metric]}")
-
-        is_best = True
-        self.best_pred = results['qubiq']
-        self.saver.save_checkpoint({
-            'epoch': epoch + 1,
-            'state_dict': self.model.module.state_dict(),
-            'optimizer': self.optimizer.state_dict(),
-            'best_pred': self.best_pred,
-        }, is_best)
+        
+        if self.args.mode != 'test':
+            for metric in results:
+                self.writer.add_scalar(metric, results[metric], epoch)
+            is_best = False
+            if self.best_pred < results['qubiq']:
+                is_best = True
+                self.best_pred = results['qubiq']
+            self.saver.save_checkpoint({
+                'epoch': epoch + 1,
+                'state_dict': self.model.module.state_dict(),
+                'optimizer': self.optimizer.state_dict(),
+                'best_pred': self.best_pred,
+            }, is_best)
 
 
     def predict_iter(self, image, target=None):
