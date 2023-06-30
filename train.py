@@ -23,12 +23,14 @@ def main(args: DictConfig):
 
     if args.mode == 'train':
         train(args, trainer)
+        trainer.writer.close()
     elif args.mode == 'eval':
         evaluate(trainer)
+        trainer.writer.close()
     elif args.mode == 'test':
         test(trainer)
 
-    trainer.writer.close()
+    
 
 def train(args, trainer):
     print('Starting Epoch:', args.start_epoch)
