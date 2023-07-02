@@ -2,7 +2,7 @@
 
 The *project* pape is [here](https://winstonhutiger.github.io/project/qubiq_uncertainty_quanification/). 
 
-This is the official code repository for *Inter-Rater Uncertainty Quantification in Medical Image Segmentation via Rater-Specific Bayesian Neural Networks* (We will publish the paper on arxiv very soon).
+This is the official code repository for [*Inter-Rater Uncertainty Quantification in Medical Image Segmentation via Rater-Specific Bayesian Neural Networks*](https://arxiv.org/pdf/2306.16556v1.pdf).
 
 In this work, we present a simple yet effective Bayesian neural network architecture to estimate the inter-rater uncertainty in medical image segmentation.
 
