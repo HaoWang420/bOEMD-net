@@ -2,7 +2,6 @@
 
 The *project* page is [here](https://winstonhutiger.github.io/project/qubiq_uncertainty_quanification/). 
 
-Arxiv preprint can be found [here](https://arxiv.org/pdf/2306.16556.pdf).
 
 This is the official code repository for [*Inter-Rater Uncertainty Quantification in Medical Image Segmentation via Rater-Specific Bayesian Neural Networks*](https://arxiv.org/pdf/2306.16556v1.pdf).
 
