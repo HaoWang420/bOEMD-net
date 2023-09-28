@@ -38,6 +38,14 @@ Our work is released under the MIT license. Please check the [LICENSE](LICENSE) 
 
 ## Citation
 If you find our work is helpful for your research, please cite our code repository in your work. 
+```
+@misc{hu2023interrater,
+      title={Inter-Rater Uncertainty Quantification in Medical Image Segmentation via Rater-Specific Bayesian Neural Networks}, 
+      author={Qingqiao Hu and Hao Wang and Jing Luo and Yunhao Luo and Zhiheng Zhangg and Jan S. Kirschke and Benedikt Wiestler and Bjoern Menze and Jianguo Zhang and Hongwei Bran Li},
+      year={2023},
+      archivePrefix={arXiv},
+}
+```
 
 ## Acknowledgement
 Phiseg code is based on [Phiseg-code](https://github.com/baumgach/PHiSeg-code) and built upon [UNet-Zoo](https://github.com/stefanknegt/Probabilistic-Unet-Pytorch/).
